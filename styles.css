@@ -114,11 +114,17 @@ button:focus-visible {
 }
 
 .wordmark img {
+  display: none;
+}
+
+.wordmark::before {
+  flex: 0 0 2.5rem;
   width: 2.5rem;
   height: 2.5rem;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 0.65rem;
-  object-fit: cover;
+  background: #000 url("assets/king-salmon-mark.png") center calc(50% - 1px) / 100% 100% no-repeat;
+  content: "";
 }
 
 .site-header nav,
