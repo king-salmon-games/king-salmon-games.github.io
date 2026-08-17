@@ -166,10 +166,10 @@ button:focus-visible {
 .hero {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.78fr);
+  grid-template-columns: minmax(0, 0.9fr) minmax(22rem, 1.1fr);
   min-height: clamp(32rem, 72svh, 52rem);
   align-items: center;
-  gap: clamp(2rem, 7vw, 8rem);
+  gap: clamp(0.35rem, 1.5vw, 1.5rem);
   overflow: hidden;
   padding: clamp(3rem, 7vw, 7rem) clamp(1.25rem, 5vw, 5rem);
   border-bottom: 1px solid var(--rule);
@@ -200,10 +200,11 @@ button:focus-visible {
 .hero-mark {
   position: relative;
   z-index: 1;
-  width: min(40vw, 34rem);
+  width: min(48vw, 40rem);
   margin: 0;
-  justify-self: end;
+  justify-self: start;
   background: transparent;
+  transform: translateX(clamp(-2rem, -2vw, -0.5rem));
 }
 
 .hero-mark img {
@@ -634,8 +635,8 @@ button:focus-visible {
 
   .hero {
     min-height: 0;
-    grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.95fr);
-    gap: clamp(0.75rem, 4vw, 1.5rem);
+    grid-template-columns: minmax(0, 0.9fr) minmax(9rem, 1.1fr);
+    gap: 0.25rem;
     padding-block: clamp(3rem, 12vw, 4.5rem);
   }
 
@@ -646,7 +647,7 @@ button:focus-visible {
   .hero-mark {
     width: 100%;
     order: 2;
-    justify-self: end;
+    justify-self: start;
   }
 
   .hero-copy .eyebrow {
@@ -677,7 +678,7 @@ button:focus-visible {
   }
 
   .hero-copy h1 {
-    font-size: clamp(2.5rem, 12.5vw, 4.1rem);
+    font-size: clamp(2.35rem, 11.8vw, 4rem);
   }
 
   .feature-copy h2 {
