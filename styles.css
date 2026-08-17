@@ -173,25 +173,13 @@ button:focus-visible {
   overflow: hidden;
   padding: clamp(3rem, 7vw, 7rem) clamp(1.25rem, 5vw, 5rem);
   border-bottom: 1px solid var(--rule);
-  background:
-    radial-gradient(circle at 76% 50%, rgba(255, 255, 255, 0.08), transparent 28rem),
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    #020408;
-  background-size: auto, 3rem 3rem, 3rem 3rem, auto;
-}
-
-.hero::after {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, rgba(2, 4, 8, 0.18), transparent 48%, rgba(2, 4, 8, 0.22));
-  content: "";
-  pointer-events: none;
+  background: #000;
 }
 
 .hero-copy {
   position: relative;
   z-index: 1;
+  min-width: 0;
   padding: 0;
 }
 
@@ -214,12 +202,8 @@ button:focus-visible {
   z-index: 1;
   width: min(40vw, 34rem);
   margin: 0;
-  overflow: hidden;
   justify-self: end;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 1rem;
-  background: #000;
-  box-shadow: 0 2.5rem 7rem rgba(0, 0, 0, 0.48);
+  background: transparent;
 }
 
 .hero-mark img {
@@ -650,19 +634,25 @@ button:focus-visible {
 
   .hero {
     min-height: 0;
-    grid-template-columns: 1fr;
-    gap: 2.5rem;
-    padding-block: 4rem;
+    grid-template-columns: minmax(0, 1fr) minmax(8rem, 0.95fr);
+    gap: clamp(0.75rem, 4vw, 1.5rem);
+    padding-block: clamp(3rem, 12vw, 4.5rem);
   }
 
   .hero-copy {
-    order: 2;
+    order: 1;
   }
 
   .hero-mark {
-    width: min(76vw, 24rem);
-    order: 1;
-    justify-self: start;
+    width: 100%;
+    order: 2;
+    justify-self: end;
+  }
+
+  .hero-copy .eyebrow {
+    max-width: 20ch;
+    font-size: clamp(0.58rem, 2.1vw, 0.7rem);
+    line-height: 1.45;
   }
 
   .slogan {
@@ -687,7 +677,7 @@ button:focus-visible {
   }
 
   .hero-copy h1 {
-    font-size: clamp(3.5rem, 18vw, 5.6rem);
+    font-size: clamp(2.5rem, 12.5vw, 4.1rem);
   }
 
   .feature-copy h2 {
