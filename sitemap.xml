@@ -2,19 +2,25 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://kingsalmongames.com/</loc>
-    <lastmod>2026-08-17</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://kingsalmongames.com/wumbos.html</loc>
+    <lastmod>2026-10-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://kingsalmongames.com/privacy.html</loc>
-    <lastmod>2026-08-14</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://kingsalmongames.com/support.html</loc>
-    <lastmod>2026-08-14</lastmod>
+    <lastmod>2026-10-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
