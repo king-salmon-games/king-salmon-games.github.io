@@ -3,16 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>King Salmon Games — Games &amp; Experiments</title>
-  <meta name="description" content="Play against the current. Meet WUMBOS, Cream Cheese × Phone, PocketLink, and Nemus Obscurum from independent studio King Salmon Games.">
-  <meta name="theme-color" content="#071b20">
+  <title>King Salmon Games — Independent Games</title>
+  <meta name="description" content="Independent games from King Salmon Games. Explore WUMBOS, Cream Cheese × Phone, PocketLink, and Nemus Obscurum, all in development.">
+  <meta name="theme-color" content="#f6f6f3">
   <link rel="canonical" href="https://kingsalmongames.com/">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="apple-touch-icon" sizes="192x192" href="assets/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=10">
+  <link rel="stylesheet" href="styles.css?v=11">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="King Salmon Games">
-  <meta property="og:title" content="King Salmon Games — Play against the current.">
+  <meta property="og:title" content="King Salmon Games — Independent Games">
   <meta property="og:description" content="Independent games and playful experiments. Explore WUMBOS, Cream Cheese × Phone, PocketLink, and Nemus Obscurum.">
   <meta property="og:url" content="https://kingsalmongames.com/">
   <meta property="og:image" content="https://kingsalmongames.com/assets/king-salmon-mark.png">
@@ -31,143 +31,96 @@
     "description": "Independent studio creating WUMBOS, Cream Cheese × Phone, PocketLink, and Nemus Obscurum."
   }
   </script>
-  <script src="experience.js?v=1" defer></script>
 </head>
 <body class="home-page" id="top">
   <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header">
+  <header class="site-header shell">
     <a class="wordmark" href="index.html" aria-label="King Salmon Games home">
-      <img src="assets/king-salmon-mark.png" width="48" height="48" alt="">
-      <span>King Salmon<br>Games<span class="wordmark-detail">Independent by nature</span></span>
+      <img src="assets/king-salmon-mark.png" width="40" height="40" alt="">
+      <span>King Salmon Games</span>
     </a>
     <nav aria-label="Primary navigation">
-      <a href="#games">The games</a>
-      <a href="#studio">The studio</a>
-      <a class="nav-contact" href="#contact">Say hello <span aria-hidden="true">↗</span></a>
+      <a href="#games">Games</a>
+      <a href="#studio">Studio</a>
+      <a href="#contact">Contact</a>
     </nav>
   </header>
 
   <main id="main">
-    <section class="current-hero" aria-labelledby="hero-title">
-      <div class="hero-atmosphere" aria-hidden="true"></div>
-      <div class="hero-content shell">
-        <div class="hero-copy">
-          <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> Independent games &amp; experiments</p>
-          <h1 id="hero-title">Play against<br>the <em>current.</em></h1>
-          <p class="hero-description">Strange little worlds.<br>Unexpected possibilities.<br>Follow your curiosity. See where it takes you.</p>
-          <a class="explore-button" href="#games"><span>Find your next world</span><span class="circle-arrow" aria-hidden="true">↓</span></a>
-        </div>
-        <div class="current-stage">
-          <img class="current-fallback" src="assets/current-field.svg" width="1000" height="1000" alt="" fetchpriority="high" aria-hidden="true">
-          <canvas id="current-canvas" aria-hidden="true"></canvas>
-          <span class="current-coordinate current-coordinate-top" aria-hidden="true">A little off the beaten path.</span>
-          <a class="portal-invitation" href="#games"><span class="portal-star" aria-hidden="true">✳</span><span>There’s more<br>beneath the surface.</span><span class="portal-small">Take a look <span aria-hidden="true">↘</span></span></a>
-          <span class="current-coordinate current-coordinate-bottom" aria-hidden="true">Stay curious. Go upstream.</span>
-        </div>
-        <div class="hero-baseline">
-          <a href="#games" class="world-count"><span class="world-count-art" aria-hidden="true"><img src="assets/wumbos-app-icon.jpg" width="42" height="42" alt=""><img src="assets/creamcheese-character.jpg" width="42" height="42" alt=""><img src="assets/pocketlink-artwork.jpg" width="42" height="42" alt=""><img src="assets/nemus-species.jpg" width="42" height="42" alt=""></span><span>Four worlds.<br><strong>One curious streak.</strong></span></a>
-          <button class="motion-toggle" type="button" hidden><span class="motion-icon" aria-hidden="true">Ⅱ</span><span class="motion-label">Pause motion</span></button>
-        </div>
+    <section class="intro shell" aria-labelledby="intro-title">
+      <h1 id="intro-title">Independent<br>game studio.</h1>
+      <div class="intro-note">
+        <p>We’re King Salmon Games. We make games and interactive experiments. Here’s what we’re working on.</p>
+        <a class="inline-link" href="#games">Explore our projects <span aria-hidden="true">↓</span></a>
       </div>
     </section>
 
-    <section class="worlds" id="games" aria-labelledby="worlds-title">
-      <div class="worlds-heading shell">
-        <div><p class="eyebrow">A few doors worth opening</p><h2 id="worlds-title">Where to <em>next?</em></h2></div>
-        <div class="worlds-note"><p>Different worlds. The same curious streak.<br>Pick the one that pulls you in.</p><span><span class="status-dot" aria-hidden="true"></span> All in development</span></div>
+    <section class="games-section shell" id="games" aria-labelledby="games-title">
+      <div class="section-heading">
+        <h2 id="games-title">Projects</h2>
+        <p>All in development</p>
       </div>
-      <nav class="world-tabs shell" aria-label="Choose a game">
-        <a class="world-tab" id="tab-wumbos" href="#wumbos" data-world="wumbos"><span class="world-tab-number">01 <span aria-hidden="true">↗</span></span><span class="world-tab-name">WUMBOS</span><span class="world-tab-kind">Corporate roguelike</span></a>
-        <a class="world-tab" id="tab-creamcheese" href="#creamcheese" data-world="creamcheese"><span class="world-tab-number">02 <span aria-hidden="true">↗</span></span><span class="world-tab-name">Cream Cheese × Phone</span><span class="world-tab-kind">3D puzzle adventure</span></a>
-        <a class="world-tab" id="tab-pocketlink" href="#pocketlink" data-world="pocketlink"><span class="world-tab-number">03 <span aria-hidden="true">↗</span></span><span class="world-tab-name">PocketLink</span><span class="world-tab-kind">Classic handheld play</span></a>
-        <a class="world-tab" id="tab-nemus-obscurum" href="#nemus-obscurum" data-world="nemus-obscurum"><span class="world-tab-number">04 <span aria-hidden="true">↗</span></span><span class="world-tab-name">Nemus Obscurum</span><span class="world-tab-kind">Creature to cosmos</span></a>
-      </nav>
-      <p class="visually-hidden" id="world-announcement" aria-live="polite" aria-atomic="true"></p>
-      <div class="world-panels">
-    <section class="project project-wumbos" id="wumbos" aria-labelledby="wumbos-title">
-      <span class="fragment-target" id="trade"></span><span class="fragment-target" id="manipulate"></span><span class="fragment-target" id="survive"></span><span class="fragment-target" id="customize"></span>
-      <div class="project-topline shell"><span>01 — WUMBOS</span><span>Corporate roguelike</span></div>
-      <div class="project-layout shell">
-        <div class="project-copy">
-          <p class="eyebrow">Cute creatures. Questionable decisions.</p>
-          <h2 id="wumbos-title" class="wumbos-title">WUMBOS</h2>
-          <p class="project-pitch">Trade. Manipulate.<br><em>Survive.</em></p>
-          <p>Build your Wumbo, play a volatile market, and survive an office that remembers every choice. Make your way through corporate life, one deeply questionable decision at a time.</p>
-          <ul class="project-facts"><li>Solo play</li><li>Multiplayer planned</li><li>In development</li></ul>
-          <a class="button" href="wumbos.html">Enter the office <span aria-hidden="true">↗</span></a>
-        </div>
-        <figure class="project-figure wumbos-figure">
-          <img src="assets/wumbos-feature-manipulate-v1.jpg" width="1672" height="941" alt="Three colorful Wumbos plot their next move around an office table." loading="lazy">
-          <figcaption><span>Office politics, with personality.</span><span>Promotional artwork</span></figcaption>
-        </figure>
-      </div>
-    </section>
+      <div class="project-grid">
+        <article class="game" id="wumbos" aria-labelledby="wumbos-title">
+          <span class="fragment-target" id="trade"></span><span class="fragment-target" id="manipulate"></span><span class="fragment-target" id="survive"></span><span class="fragment-target" id="customize"></span>
+          <a class="game-art art-wumbos" href="wumbos.html" aria-label="Explore WUMBOS">
+            <img src="assets/wumbos-feature-manipulate-v1.jpg" width="1672" height="941" alt="Three blue Wumbos in office attire sit around a boardroom table." fetchpriority="high">
+          </a>
+          <div class="game-heading"><h3 id="wumbos-title">WUMBOS</h3><p>Corporate roguelike</p></div>
+          <p class="game-description">Build your Wumbo. Trade a volatile market. Navigate office politics and live with the consequences.</p>
+          <div class="game-bottom"><p>Solo play · Multiplayer planned</p><a class="inline-link" href="wumbos.html">Explore WUMBOS <span aria-hidden="true">↗</span></a></div>
+        </article>
 
-    <section class="project project-cream" id="creamcheese" aria-labelledby="creamcheese-title">
-      <div class="project-topline shell"><span>02 — Cream Cheese × Phone</span><span>3D puzzle adventure</span></div>
-      <div class="project-layout shell">
-        <div class="cream-visual" aria-label="Cream Cheese × Phone artwork and gameplay">
-          <img class="cream-character" src="assets/creamcheese-character.jpg" width="1024" height="1024" alt="The cream-haired character presents a block of cream cheese in its silver wrapper." loading="lazy">
-          <figure class="gameplay-phone"><img src="assets/creamcheese-gameplay.jpg" width="390" height="844" alt="A block of cream cheese on an elevated puzzle path, with a phone-shaped outline ahead." loading="lazy"><figcaption>Development screenshot</figcaption></figure>
-          <span class="cream-sticker" aria-hidden="true">Handle<br>with care.</span>
-        </div>
-        <div class="project-copy">
-          <p class="eyebrow">A very delicate identity crisis.</p>
-          <h2 id="creamcheese-title"><span class="visually-hidden">Cream Cheese × Phone</span><img class="cream-wordmark" src="assets/creamcheese-wordmark.png" width="2000" height="600" alt="" loading="lazy"></h2>
-          <p class="project-pitch">Cream cheese.<br>Dreams of being a phone.</p>
-          <p>Roll a block of cream cheese through precarious 3D puzzles. Line up your footprint, mind the drop, and protect your glass faces. A little padding goes a long way.</p>
-          <ul class="project-facts"><li>Made for iPhone</li><li>Six survival puzzles</li><li>In development</li></ul>
-          <a class="button" href="mailto:bigkingsalmongames@gmail.com?subject=Cream%20Cheese%20%C3%97%20Phone%20playtesting">Ask about playtesting <span aria-hidden="true">↗</span></a>
-        </div>
-      </div>
-    </section>
+        <article class="game" id="creamcheese" aria-labelledby="creamcheese-title">
+          <figure class="game-art art-cream">
+            <img src="assets/creamcheese-character.jpg" width="1024" height="1024" alt="The cream-haired Cream Cheese × Phone character holds a block of cream cheese in its silver wrapper." fetchpriority="high">
+          </figure>
+          <div class="game-heading"><h3 id="creamcheese-title">Cream Cheese × Phone</h3><p>3D puzzle adventure</p></div>
+          <p class="game-description">Roll a block of cream cheese through six precarious puzzles. Match your footprint and protect your glass faces.</p>
+          <div class="game-bottom"><p>For iPhone</p><a class="inline-link" href="mailto:bigkingsalmongames@gmail.com?subject=Cream%20Cheese%20%C3%97%20Phone%20playtesting">Playtesting inquiries <span aria-hidden="true">↗</span></a></div>
+        </article>
 
-    <section class="project project-pocket" id="pocketlink" aria-labelledby="pocketlink-title">
-      <div class="project-topline shell"><span>03 — PocketLink</span><span>Classic handheld play</span></div>
-      <div class="project-layout shell">
-        <div class="project-copy">
-          <p class="eyebrow">A pocket full of possibilities.</p>
-          <h2 id="pocketlink-title" class="pocket-title">PocketLink<span aria-hidden="true">↗</span></h2>
-          <p class="project-pitch">Old-school spirit.<br>A new connection.</p>
-          <p>A handheld emulator for iPhone, built around your own game library. Bring your classics along with touch controls, saves, and private friend rooms.</p>
-          <ul class="project-facts"><li>GB · GBC · GBA</li><li>Made for iPhone</li><li>In development</li></ul>
-          <a class="button" href="mailto:bigkingsalmongames@gmail.com?subject=PocketLink%20updates">Ask about PocketLink <span aria-hidden="true">↗</span></a>
-          <p class="project-footnote">An independent emulator. Games are not included.</p>
-        </div>
-        <figure class="pocket-visual">
-          <div class="pocket-art"><img src="assets/pocketlink-artwork.jpg" width="1024" height="1024" alt="Two red and green cartridges connected by a cable in a translucent purple pocket." loading="lazy"></div>
-          <figcaption>Make room for another adventure.</figcaption>
-        </figure>
-      </div>
-    </section>
+        <article class="game" id="pocketlink" aria-labelledby="pocketlink-title">
+          <figure class="game-art art-pocket">
+            <img src="assets/pocketlink-artwork.jpg" width="1024" height="1024" alt="Red and green cartridges linked by a cable inside a translucent purple pocket." loading="lazy">
+          </figure>
+          <div class="game-heading"><h3 id="pocketlink-title">PocketLink</h3><p>Handheld emulator</p></div>
+          <p class="game-description">Your GB, GBC, and GBA library on iPhone, with touch controls, saves, and private friend rooms.</p>
+          <div class="game-bottom"><p>Games not included</p><a class="inline-link" href="mailto:bigkingsalmongames@gmail.com?subject=PocketLink%20updates">Ask about PocketLink <span aria-hidden="true">↗</span></a></div>
+        </article>
 
-    <section class="project project-nemus" id="nemus-obscurum" aria-labelledby="nemus-title">
-      <div class="project-topline shell"><span>04 — Nemus Obscurum</span><span>Creature to cosmos</span></div>
-      <div class="nemus-heading shell">
-        <div><p class="eyebrow">Life begins small.</p><h2 id="nemus-title">Nemus<br><em>Obscurum</em></h2></div>
-        <div class="nemus-intro"><p class="project-pitch">Find your place.<br>Then find what lies beyond.</p><p>Create a species. Feed, evade, evolve, and explore an unfamiliar homeworld. Begin in water or on land, build a life, and follow your curiosity toward the stars.</p><ul class="project-facts"><li>Creature survival</li><li>Offline play</li><li>In development</li></ul></div>
+        <article class="game" id="nemus-obscurum" aria-labelledby="nemus-title">
+          <figure class="game-art art-nemus">
+            <img src="assets/nemus-homeworld.jpg" width="1600" height="900" alt="An aquatic creature explores an underwater homeworld filled with marine plants and other life. Development screenshot." loading="lazy">
+          </figure>
+          <div class="game-heading"><h3 id="nemus-title">Nemus Obscurum</h3><p>Creature survival</p></div>
+          <p class="game-description">Create a species. Feed, evade, and evolve as you explore an unfamiliar homeworld, from water or land toward the stars.</p>
+          <div class="game-bottom"><p>Offline play</p><a class="inline-link" href="mailto:bigkingsalmongames@gmail.com?subject=Nemus%20Obscurum%20updates">Ask about Nemus Obscurum <span aria-hidden="true">↗</span></a></div>
+        </article>
       </div>
-      <div class="nemus-gallery shell">
-        <figure class="nemus-world"><img src="assets/nemus-homeworld.jpg" width="1600" height="900" alt="A player-created aquatic creature explores a homeworld filled with marine plants and other life." loading="lazy"><figcaption><span>01 — A world to grow into</span><span>Development screenshot</span></figcaption></figure>
-        <figure class="nemus-orbit"><img src="assets/nemus-orbit.jpg" width="1000" height="500" alt="An orbiting view of the planet Nacre against a dark field of stars." loading="lazy"><figcaption><span>02 — A sky to reach for</span><span>Development screenshot</span></figcaption></figure>
-      </div>
-      <div class="nemus-cta shell"><a class="button" href="mailto:bigkingsalmongames@gmail.com?subject=Nemus%20Obscurum%20updates">Ask about Nemus Obscurum <span aria-hidden="true">↗</span></a><p>A living world, still taking shape.</p></div>
-    </section>
-
-      </div>
-      <div class="worlds-footer shell"><span>Made with a mind of their own.</span><button class="next-world" type="button" hidden><span>Next world</span><span aria-hidden="true">→</span></button></div>
+      <p class="artwork-note">WUMBOS, Cream Cheese × Phone, and PocketLink shown with promotional artwork. Nemus Obscurum shown in development.</p>
     </section>
 
     <section class="studio-section shell" id="studio" aria-labelledby="studio-title">
-      <div class="studio-seal"><span class="seal-orbit" aria-hidden="true"></span><img src="assets/king-salmon-mark.png" width="512" height="512" alt="The crowned salmon of King Salmon Games." loading="lazy"><span>King Salmon Games<br>Independent by nature.</span></div>
-      <div class="studio-copy"><p class="eyebrow">The studio</p><h2 id="studio-title">We follow<br>the <em>strange ideas.</em></h2><p>An office full of tiny schemers. Cream cheese with an identity crisis. A link to the games you grew up with. A creature looking up at the stars.</p><p>King Salmon Games is an independent studio making games and experiments with a personality of their own. Different worlds. The same curious streak.</p></div>
+      <h2 id="studio-title">The studio</h2>
+      <div class="studio-copy">
+        <p>King Salmon Games is an independent studio making games and interactive experiments.</p>
+        <p>Our current projects span corporate roguelikes, 3D puzzles, handheld emulation, and creature survival. They’re all in development. If you’d like to get involved in playtesting, we’d like to hear from you.</p>
+      </div>
     </section>
 
-    <section class="contact-section" id="contact" aria-labelledby="contact-title">
-      <div class="shell contact-inner"><div><p class="eyebrow">Playtest · Collaborate · Just say hi</p><h2 id="contact-title">Good things start<br>with <em>hello.</em></h2></div><div class="contact-copy"><p>Curious about a project? Want to help test what comes next? We're listening.</p><a class="contact-email" href="mailto:bigkingsalmongames@gmail.com">bigkingsalmongames@gmail.com <span aria-hidden="true">↗</span></a><a class="text-link" href="support.html">Looking for game support? <span aria-hidden="true">→</span></a></div></div>
+    <section class="contact-section shell" id="contact" aria-labelledby="contact-title">
+      <div><h2 id="contact-title">Get in touch.</h2><p>Playtesting, project questions, or a simple hello.</p></div>
+      <div class="contact-links">
+        <a class="contact-email" href="mailto:bigkingsalmongames@gmail.com">bigkingsalmongames@gmail.com <span aria-hidden="true">↗</span></a>
+        <a class="inline-link" href="support.html">Game support <span aria-hidden="true">↗</span></a>
+      </div>
     </section>
   </main>
 
-  <footer class="site-footer shell"><a class="footer-name" href="#top">King Salmon Games <span aria-hidden="true">↑</span></a><span>© 2026 King Salmon Games</span><nav aria-label="Legal and support"><a href="privacy.html">Privacy</a><a href="support.html">Support</a></nav></footer>
+  <footer class="site-footer shell">
+    <span>© 2026 King Salmon Games</span>
+    <nav aria-label="Legal and support"><a href="privacy.html">Privacy</a><a href="support.html">Support</a><a href="#top">Back to top <span aria-hidden="true">↑</span></a></nav>
+  </footer>
 </body>
 </html>
