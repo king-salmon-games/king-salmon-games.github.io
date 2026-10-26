@@ -1,0 +1,16 @@
+{
+  "nemus-app-icon.jpg": {
+    "type": "Promotional app icon artwork; not a gameplay capture",
+    "created": "2026-10-26",
+    "tool": "Built-in image_gen",
+    "prompt": "Use case: stylized-concept. Asset type: square app icon for an independent game called Nemus Obscurum, to use on the studio website. Primary request: just a mysterious dark forest. Create a refined, atmospheric, richly illustrated icon of ancient forest trees, deep layered woodland silhouettes, tangled roots and a narrow opening receding into cool mist. Subtle dim light filters through far-away canopy; dark moss greens, nearly black trunks, muted blue-green mist, beautiful controlled tonal depth. Clear simple focal composition readable as an app icon, with quiet intrigue and a sense of an unknowable living forest. Full-bleed opaque square, detailed painterly game key art, no border and no baked-in rounded corners. No people, creatures, eyes, buildings, interface, letters, logos, title, or text. Do not disclose any game mechanics or plot. Generate one square 1024x1024 image.",
+    "delivery": "JPEG quality 87, resized to 1024 × 1024; rounded corners supplied by CSS"
+  },
+  "kakatta-app-icon.jpg": {
+    "type": "Approved promotional app icon artwork; not a gameplay capture",
+    "source": "kakatta/game/Assets/ExternalForge/Branding/KakattaAppIcon.png",
+    "source_manifest": "kakatta/art/app-icon-provenance.json",
+    "source_sha256": "eee002bb9a8be50a48a52b75ad08395ea2b7bac552e967be66612c0e6d9f2e0d",
+    "delivery": "JPEG quality 87, 1024 × 1024; rounded corners supplied by CSS"
+  }
+}
