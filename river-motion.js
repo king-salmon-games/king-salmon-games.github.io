@@ -19,7 +19,10 @@
   ];
   // The left-hand waterfall has a second, higher pool. Its upstream route brings
   // the foreground fish into the portrait composition above the title.
-  const portraitShoal = [shoal[0], { ...shoal[1], from: [0.45, 0.6], to: [0.84, 0.37], lift: 0.265 }];
+  const portraitShoal = [
+    { ...shoal[0], from: [0.825, 0.747], to: [0.845, 0.37] },
+    { ...shoal[1], from: [0.45, 0.6], to: [0.84, 0.37], lift: 0.265 },
+  ];
   let route = shoal;
 
   let paused = motionPreference.matches;
