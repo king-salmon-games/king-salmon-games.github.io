@@ -99,7 +99,7 @@ export function setupPoolDetail(hero, film, surface) {
     new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       const coverWidth = Math.max(width, height * filmWidth / baseHeight);
-      film.parentElement.style.setProperty('--film-cover-width', coverWidth + 'px');
+      hero.style.setProperty('--film-cover-width', coverWidth + 'px');
     }).observe(hero);
   }
   new IntersectionObserver(([entry]) => {

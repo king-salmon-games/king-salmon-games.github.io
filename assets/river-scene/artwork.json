@@ -18,6 +18,11 @@
     "source": "tools/build_weather.py derives sky, canopy and valley mist masks from the landscape. A seeded generator combines tileable three-dimensional value and Worley noise, with a separate cloud coverage map derived from the sky artwork.",
     "delivery": "weather.frag traces the moving cloud volume with sunlight attenuation, bends fir crowns in the wind and shades drifting valley mist."
   },
+  "foreground_mist": {
+    "files": ["river-mist-desktop.webp", "river-mist-mobile.webp", "river-mist-desktop-still.webp", "river-mist-mobile-still.webp"],
+    "source": "tools/build_river_mist.py samples a three-dimensional volume above the pool. The water mask keeps mist off the rock banks, and both crops use the same camera as the river.",
+    "delivery": "Transparent WebP loops cover the lowest 300 rows of the 916-row landscape. Static frames provide the reduced-motion versions."
+  },
   "films": {
     "files": ["river-pool-desktop.mp4", "river-pool-mobile.mp4", "river-start-desktop.webp", "river-start-mobile.webp", "pool-detail-desktop.png", "pool-detail-mobile.png"],
     "source": "tools/render_river.py renders the landscape and the detailed pool at the same timestamp, packs both into one video frame per crop, extracts its opening still, and derives the registered pool mask from water-mask.png.",

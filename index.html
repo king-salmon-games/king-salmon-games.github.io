@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>King Salmon Games</title>
-  <meta name="description" content="Explore Wumbos, Cream Cheese × Phone, PocketLink, Nemus Obscurum, and Kakatta. Discover what's next from King Salmon Games and join a wishlist.">
+  <meta name="description" content="Explore Cream Cheese × Phone, PocketLink, Wumbos, Kakatta, and Nemus Obscurum. Discover what's next from King Salmon Games and join a wishlist.">
   <meta name="theme-color" content="#0d1113">
   <link rel="canonical" href="https://kingsalmongames.com/">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
@@ -12,11 +12,11 @@
   <link rel="preload" as="font" href="assets/fonts/barlow-condensed-700.woff2" type="font/woff2" crossorigin>
   <link rel="preload" as="image" href="assets/ui.svg" type="image/svg+xml">
   <script>document.documentElement.classList.add('js-home');</script>
-  <link rel="stylesheet" href="styles.css?v=19">
+  <link rel="stylesheet" href="styles.css?v=20">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="King Salmon Games">
   <meta property="og:title" content="King Salmon Games">
-  <meta property="og:description" content="Explore Wumbos, Cream Cheese × Phone, PocketLink, Nemus Obscurum, and Kakatta.">
+  <meta property="og:description" content="Explore Cream Cheese × Phone, PocketLink, Wumbos, Kakatta, and Nemus Obscurum.">
   <meta property="og:url" content="https://kingsalmongames.com/">
   <meta property="og:image" content="https://kingsalmongames.com/assets/river-scene/studio-preview.jpg?v=2">
   <meta property="og:image:width" content="1200">
@@ -31,11 +31,11 @@
     "url": "https://kingsalmongames.com/",
     "email": "bigkingsalmongames@gmail.com",
     "logo": "https://kingsalmongames.com/assets/king-salmon-mark.png",
-    "description": "Independent studio creating Wumbos, Cream Cheese × Phone, PocketLink, Nemus Obscurum, and Kakatta."
+    "description": "Independent studio creating Cream Cheese × Phone, PocketLink, Wumbos, Kakatta, and Nemus Obscurum."
   }
   </script>
   <script src="site.js?v=8" defer onerror="document.documentElement.classList.remove('js-home')"></script>
-  <script type="module" src="water-surface.js?v=5"></script>
+  <script type="module" src="water-surface.js?v=6"></script>
 </head>
 <body class="home-page" id="top">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -70,6 +70,7 @@
         </div>
       </div>
       <canvas data-water-surface aria-hidden="true"></canvas>
+      <div class="river-mist" aria-hidden="true"></div>
       <div class="hero-overlay">
         <div class="shell hero-inner">
           <div class="hero-copy">
@@ -92,36 +93,6 @@
         </div>
       </div>
       <ul class="game-track" id="game-track" aria-label="Game collection">
-          <li class="game-card" id="wumbos">
-            <span id="trade" class="legacy-anchor"></span><span id="manipulate" class="legacy-anchor"></span><span id="survive" class="legacy-anchor"></span><span id="customize" class="legacy-anchor"></span><div class="game-cover">
-              <a href="wumbos.html" class="game-image" aria-label="Explore Wumbos"><img src="assets/gallery/wumbos.webp" width="840" height="530" alt="Blue Wumbos in office attire trading in front of market screens." loading="lazy"></a>
-              <a class="card-wishlist" aria-label="Wishlist Wumbos" href="wishlist.html?game=wumbos"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
-            </div>
-            <div class="game-details">
-              <a class="game-name" href="wumbos.html"><h3>Wumbos</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
-              <p>Corporate roguelike</p>
-            </div>
-          </li>
-          <li class="game-card" id="nemus-obscurum">
-            <div class="game-cover">
-              <a href="nemus-obscurum.html" class="game-image" aria-label="Explore Nemus Obscurum"><img src="assets/gallery/nemus.webp" width="840" height="530" alt="Old trees and tangled roots surround a misty forest path." loading="lazy"></a>
-              <a class="card-wishlist" aria-label="Wishlist Nemus Obscurum" href="wishlist.html?game=nemus-obscurum"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
-            </div>
-            <div class="game-details">
-              <a class="game-name" href="nemus-obscurum.html"><h3>Nemus Obscurum</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
-              <p>Platformer / simulation</p>
-            </div>
-          </li>
-          <li class="game-card" id="kakatta">
-            <div class="game-cover">
-              <a href="kakatta.html" class="game-image" aria-label="Explore Kakatta"><img src="assets/gallery/kakatta.webp" width="840" height="530" alt="A silver salmon leaps above a sunlit mountain river." loading="lazy"></a>
-              <a class="card-wishlist" aria-label="Wishlist Kakatta" href="wishlist.html?game=kakatta"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
-            </div>
-            <div class="game-details">
-              <a class="game-name" href="kakatta.html"><h3>Kakatta</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
-              <p>Action fishing</p>
-            </div>
-          </li>
           <li class="game-card" id="creamcheese">
             <div class="game-cover">
               <a href="creamcheese.html" class="game-image" aria-label="Explore Cream Cheese × Phone"><img src="assets/gallery/creamcheese.webp" width="840" height="530" alt="The cream-haired character cradles a silver-wrapped block of cream cheese." loading="lazy"></a>
@@ -140,6 +111,36 @@
             <div class="game-details">
               <a class="game-name" href="pocketlink.html"><h3>PocketLink</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
               <p>Retro game linking</p>
+            </div>
+          </li>
+          <li class="game-card" id="wumbos">
+            <span id="trade" class="legacy-anchor"></span><span id="manipulate" class="legacy-anchor"></span><span id="survive" class="legacy-anchor"></span><span id="customize" class="legacy-anchor"></span><div class="game-cover">
+              <a href="wumbos.html" class="game-image" aria-label="Explore Wumbos"><img src="assets/gallery/wumbos.webp" width="840" height="530" alt="Blue Wumbos in office attire trading in front of market screens." loading="lazy"></a>
+              <a class="card-wishlist" aria-label="Wishlist Wumbos" href="wishlist.html?game=wumbos"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
+            </div>
+            <div class="game-details">
+              <a class="game-name" href="wumbos.html"><h3>Wumbos</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
+              <p>Corporate roguelike</p>
+            </div>
+          </li>
+          <li class="game-card" id="kakatta">
+            <div class="game-cover">
+              <a href="kakatta.html" class="game-image" aria-label="Explore Kakatta"><img src="assets/gallery/kakatta.webp" width="840" height="530" alt="A silver salmon leaps above a sunlit mountain river." loading="lazy"></a>
+              <a class="card-wishlist" aria-label="Wishlist Kakatta" href="wishlist.html?game=kakatta"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
+            </div>
+            <div class="game-details">
+              <a class="game-name" href="kakatta.html"><h3>Kakatta</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
+              <p>Action fishing</p>
+            </div>
+          </li>
+          <li class="game-card" id="nemus-obscurum">
+            <div class="game-cover">
+              <a href="nemus-obscurum.html" class="game-image" aria-label="Explore Nemus Obscurum"><img src="assets/gallery/nemus.webp" width="840" height="530" alt="Old trees and tangled roots surround a misty forest path." loading="lazy"></a>
+              <a class="card-wishlist" aria-label="Wishlist Nemus Obscurum" href="wishlist.html?game=nemus-obscurum"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
+            </div>
+            <div class="game-details">
+              <a class="game-name" href="nemus-obscurum.html"><h3>Nemus Obscurum</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
+              <p>Platformer / simulation</p>
             </div>
           </li>
       </ul>

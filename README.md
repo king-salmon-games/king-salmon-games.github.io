@@ -1,6 +1,6 @@
 # King Salmon Games website
 
-Static studio website for [kingsalmongames.com](https://kingsalmongames.com), hosted with GitHub Pages. The homepage introduces Wumbos, Cream Cheese × Phone, PocketLink, Nemus Obscurum, and Kakatta.
+Static studio website for [kingsalmongames.com](https://kingsalmongames.com), hosted with GitHub Pages. The homepage introduces Cream Cheese × Phone, PocketLink, Wumbos, Kakatta, and Nemus Obscurum.
 
 ## Work on the site locally
 
@@ -41,6 +41,8 @@ As the hero title and button fade, the foreground pool resolves three shorter ba
 
 The sky shader traces rays through a wind-driven, three-dimensional cloud layer. It samples density toward the sun to shade cloud interiors and edges. The same wind bends the fir crowns, while a lower band of mist drifts across the valley.
 
+At the front of the pool, a separate volume of river mist drifts over the ripples. The desktop and portrait versions follow the same crop as the water, including during a swipe. The browser plays the transparent mist loop over either renderer and uses its still frame when a visitor prefers reduced motion.
+
 Touch-first devices play a 30 fps film rendered from the same shaders. Each decoded frame contains the visible landscape and a second rendering of its foreground pool at full detail. Scrolling blends that strip over the water using a shoreline mask. The strip and the landscape share a playback clock through the entire 48-second loop. The visible desktop and portrait compositions are 1600 × 854 and 720 × 900. Each opening still contains only the visible composition.
 
 On desktop, WebGL takes over at the film's current playhead and targets 30 fps. It repaints the full landscape whenever the drawing buffer changes size and limits the simulation step after a dropped frame. The film also covers GPU interruptions and sustained slow rendering. On touch devices WebGL can take over if video playback fails.
@@ -51,7 +53,8 @@ The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916).
 | --- | --- | --- |
 | Water boundaries | `python tools/build_water_mask.py`, then rebake the pool | NumPy, OpenCV |
 | Pool dynamics and foam | `python tools/bake_water_dynamics.py` | NumPy, Numba, Pillow |
-| Sky boundary, canopy, mist, or cloud volume | `python tools/build_weather.py` | NumPy, Pillow |
+| Sky boundary, canopy, valley mist, or cloud volume | `python tools/build_weather.py` | NumPy, Pillow |
+| Mist over the foreground pool | `python tools/build_river_mist.py` | NumPy, Pillow with animated WebP support |
 | Films, opening stills, and pool masks after changing a shader or its inputs | `python tools/render_river.py --browser-channel chrome --output-dir assets/river-scene` | Python Playwright and Pillow, Chrome with WebGL, FFmpeg with libx264 and libwebp |
 
 For Playwright's bundled Chromium, install it with `python -m playwright install chromium` and omit `--browser-channel chrome`.

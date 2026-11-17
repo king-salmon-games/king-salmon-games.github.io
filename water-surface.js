@@ -1,4 +1,4 @@
-import { setupPoolDetail } from './pool-detail.js?v=1';
+import { setupPoolDetail } from './pool-detail.js?v=2';
 
 async function startLiveScene(canvas, poolDetail) {
   const hero = canvas.closest('.river-hero');
