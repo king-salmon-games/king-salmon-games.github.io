@@ -22,6 +22,7 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 | `styles.css` | Shared navigation, local fonts, colors, homepage layout, and responsive styles |
 | `site.js` | Mobile menu, swipeable game collection, ambience, and fallback video playback |
 | `water-surface.js` | Responsive landscape framing, frame budget, and fallback selection |
+| `pool-detail.js` | Scroll-driven pool detail and presentation of the synchronized pool strip on touch devices |
 | `river-scene.js` | WebGL renderer shared by the homepage and the film encoder |
 | `assets/river-scene/water.frag` | Falling sheets, simulated pool surface, reflections, foam, and spray |
 | `assets/river-scene/weather.frag` | Volumetric clouds, valley mist, and wind in the trees |
@@ -36,9 +37,11 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 
 The falls accelerate over the ledges and thin as they drop. A signed distance field describes the folded sheets so the shader can trace their surfaces and calculate how they transmit and scatter light. Below the falls, an offline shallow-water simulation drives waves and foam around the rock banks. The water runs at half speed, so the pool's 64 simulated frames play over 16 seconds. The browser adds fine ripples and reflects the moving sky.
 
+As the hero title and button fade, the foreground pool resolves three shorter bands of surface waves. Their heights and slopes affect reflections, refraction, and the foam on each crest. The live shader takes up to five surface-intersection steps and filters waves smaller than a pixel.
+
 The sky shader traces rays through a wind-driven, three-dimensional cloud layer. It samples density toward the sun to shade cloud interiors and edges. The same wind bends the fir crowns, while a lower band of mist drifts across the valley.
 
-Touch-first devices play a 30 fps film rendered from the same water and weather shaders. Its 48-second loop spans a complete cloud cycle. Each crop opens with a still from the first decoded frame. The desktop film is 1600 × 854 and the portrait film is 720 × 900.
+Touch-first devices play a 30 fps film rendered from the same shaders. Each decoded frame contains the visible landscape and a second rendering of its foreground pool at full detail. Scrolling blends that strip over the water using a shoreline mask. The strip and the landscape share a playback clock through the entire 48-second loop. The visible desktop and portrait compositions are 1600 × 854 and 720 × 900. Each opening still contains only the visible composition.
 
 On desktop, WebGL takes over at the film's current playhead and targets 30 fps. It repaints the full landscape whenever the drawing buffer changes size and limits the simulation step after a dropped frame. The film also covers GPU interruptions and sustained slow rendering. On touch devices WebGL can take over if video playback fails. The separate ambience starts on arrival where audible autoplay is allowed, or on the first tap, click, or keypress when the browser requires interaction.
 
@@ -49,7 +52,7 @@ The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916).
 | Water boundaries | `python tools/build_water_mask.py`, then rebake the pool | NumPy, OpenCV |
 | Pool dynamics and foam | `python tools/bake_water_dynamics.py` | NumPy, Numba, Pillow |
 | Sky boundary, canopy, mist, or cloud volume | `python tools/build_weather.py` | NumPy, Pillow |
-| Films and opening stills after changing a shader or its inputs | `python tools/render_river.py --browser-channel chrome --output-dir assets/river-scene` | Python Playwright, Chrome with WebGL, FFmpeg with libx264 and libwebp |
+| Films, opening stills, and pool masks after changing a shader or its inputs | `python tools/render_river.py --browser-channel chrome --output-dir assets/river-scene` | Python Playwright and Pillow, Chrome with WebGL, FFmpeg with libx264 and libwebp |
 
 For Playwright's bundled Chromium, install it with `python -m playwright install chromium` and omit `--browser-channel chrome`.
 

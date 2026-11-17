@@ -1,11 +1,13 @@
-async function startLiveScene(canvas) {
+import { setupPoolDetail } from './pool-detail.js?v=1';
+
+async function startLiveScene(canvas, poolDetail) {
   const hero = canvas.closest('.river-hero');
   const film = hero.querySelector('[data-river-water]');
   const portrait = window.matchMedia('(max-width: 680px)');
   let engine;
   let gl;
   try {
-    engine = await import('./river-scene.js?v=2');
+    engine = await import('./river-scene.js?v=3');
     gl = engine.openSceneContext(canvas);
   } catch {
     // The film also covers module loading failures and blocked GPU contexts.
@@ -99,7 +101,7 @@ async function startLiveScene(canvas) {
       // Resizing clears the drawing buffer. Change it only inside a draw and
       // submit the entire opaque landscape before returning to the compositor.
       if (needsResize) resize();
-      scene.render(sceneTime, crop, true);
+      scene.render(sceneTime, crop, true, poolDetail());
     } catch {
       // A GPU reset can invalidate the framebuffer before the loss event is
       // delivered. Let the event handlers rebuild it when the context returns.
@@ -182,12 +184,14 @@ async function startLiveScene(canvas) {
 
 const canvas = document.querySelector('[data-water-surface]');
 if (canvas) {
-  const film = canvas.closest('.river-hero').querySelector('[data-river-water]');
+  const hero = canvas.closest('.river-hero');
+  const film = hero.querySelector('[data-river-water]');
+  const poolDetail = setupPoolDetail(hero, film, canvas);
   // On a touch-first screen the decoder presents the authored scene on its own
   // clock throughout a gesture, including while a finger is held on the glass.
   if (matchMedia('(pointer: coarse)').matches && !film.error && !film.hasAttribute('data-needs-renderer')) {
-    film.addEventListener('river-video-unavailable', () => startLiveScene(canvas), { once: true });
+    film.addEventListener('river-video-unavailable', () => startLiveScene(canvas, poolDetail), { once: true });
   } else {
-    startLiveScene(canvas);
+    startLiveScene(canvas, poolDetail);
   }
 }

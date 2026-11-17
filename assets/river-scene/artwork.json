@@ -19,9 +19,9 @@
     "delivery": "weather.frag traces the moving cloud volume with sunlight attenuation, bends fir crowns in the wind and shades drifting valley mist."
   },
   "films": {
-    "files": ["river-desktop.mp4", "river-mobile.mp4", "river-start-desktop.webp", "river-start-mobile.webp"],
-    "source": "tools/render_river.py renders the landscape with river-scene.js and the live water and weather shaders, encodes both crops with FFmpeg, and extracts the opening still from each finished film.",
-    "delivery": "48-second silent H.264 loops at 30 fps, 1600 × 854 for desktop and 720 × 900 for portrait. The separate waterfall.m4a supplies the ambience."
+    "files": ["river-pool-desktop.mp4", "river-pool-mobile.mp4", "river-start-desktop.webp", "river-start-mobile.webp", "pool-detail-desktop.png", "pool-detail-mobile.png"],
+    "source": "tools/render_river.py renders the landscape and the detailed pool at the same timestamp, packs both into one video frame per crop, extracts its opening still, and derives the registered pool mask from water-mask.png.",
+    "delivery": "48-second silent H.264 loops at 30 fps. The desktop frame contains a 1600 × 854 landscape with a 1600 × 240 detail strip. The portrait frame contains a 720 × 900 landscape with a 720 × 256 detail strip. The separate waterfall.m4a supplies the ambience."
   },
   "share_preview": {
     "file": "studio-preview.jpg",

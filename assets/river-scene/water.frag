@@ -8,6 +8,7 @@ uniform sampler2D uWeather;
 uniform vec4 uCrop;
 uniform vec2 uResolution;
 uniform float uTime;
+uniform float uPoolDetail;
 
 const vec2 plateSize = vec2(1717.0, 916.0);
 const float gravity = 9.81;
@@ -193,6 +194,67 @@ vec3 capillary(vec2 p, float gust) {
     return vec3(dot(a,sin(phase)),dot(ca,kx),dot(ca,ky));
 }
 
+// Three directional packets resolve successively shorter surface waves
+// (about 16, 10 and 7 cm). Their phases follow gravity-capillary dispersion.
+// Build the packet once per ray, then evaluate it at each SDF intersection.
+struct PoolPacket {
+    vec3 phase;
+    vec3 kx;
+    vec3 ky;
+    vec3 amplitude;
+    vec3 harmonic;
+};
+
+PoolPacket poolPacket(vec2 p, float s, float gust, float detail) {
+    vec3 kx = vec3(35.0,-55.0,78.0);
+    vec3 ky = vec3(19.0,31.0,-36.0);
+    vec3 k = sqrt(kx*kx+ky*ky);
+    vec3 omega = sqrt(gravity*k+.000073*k*k*k);
+    float t = flowTime();
+    vec2 parcel = p-vec2(.21,.49)*t;
+    // Crests bend around longer waves and travel in groups. These local
+    // wave vectors include the derivative of the bend over the ray segment.
+    vec3 gx = vec3(1.1,-1.65,2.17);
+    vec3 gy = vec3(1.8,1.37,-2.04);
+    vec3 group = gx*parcel.x+gy*parcel.y-vec3(.85,1.18,1.37)*t+vec3(.3,2.7,1.8);
+    vec3 turn = vec3(2.2,1.65,1.91);
+    vec3 deflection = turn*cos(group);
+    vec3 sx = vec3(-2.7,3.4,2.8);
+    vec3 sy = vec3(3.3,2.8,-3.6);
+    vec3 shear = sx*parcel.x+sy*parcel.y-vec3(.53,.86,.67)*t;
+    PoolPacket packet;
+    packet.phase = kx*parcel.x+ky*parcel.y-omega*t+turn*sin(group)+.92*sin(shear);
+    packet.kx = kx+deflection*gx+.92*cos(shear)*sx;
+    packet.ky = ky+deflection*gy+.92*cos(shear)*sy;
+    // Analytic pixel footprint through the inverse pool projection. Filter
+    // the slope as well as the height, including each sharper crest harmonic.
+    vec2 pixel = uCrop.zw*plateSize/uResolution;
+    float width = 58.0+50.0*s;
+    float depth = .55+.45*s;
+    vec3 dx = packet.kx*pixel.x/width;
+    vec3 dy = (-50.0*p.x/width*packet.kx+3.96/(depth*depth)*packet.ky)*pixel.y/244.0;
+    vec3 footprint = max(abs(dx),abs(dy));
+    vec3 resolved = 1.0-smoothstep(vec3(.95),vec3(2.75),footprint);
+    vec3 bands = smoothstep(vec3(0.,.08,.23),vec3(.64,.86,1.),vec3(detail));
+    vec3 envelope = .60+.32*cos(group*.82+vec3(.5,1.4,.9))
+                       +.08*sin(shear*.61+vec3(2.8,.9,1.6));
+    packet.amplitude = vec3(.0044,.00235,.0014)*envelope*bands*resolved
+                     * (.68+.32*s)*(.82+.34*gust);
+    packet.harmonic = .125*(1.0-smoothstep(vec3(.95),vec3(2.75),2.0*footprint));
+    return packet;
+}
+
+vec3 packetSurface(PoolPacket packet, vec2 displacement) {
+    vec3 phase = packet.phase+packet.kx*displacement.x+packet.ky*displacement.y;
+    vec3 crest = sin(phase);
+    vec3 slope = cos(phase);
+    // A bounded second harmonic raises and narrows each crest without
+    // introducing a second independent frequency or reversing the current.
+    vec3 shape = crest-packet.harmonic*(1.0-2.0*crest*crest);
+    vec3 tangent = packet.amplitude*slope*(1.0+4.0*packet.harmonic*crest);
+    return vec3(dot(packet.amplitude,shape),dot(tangent,packet.kx),dot(tangent,packet.ky));
+}
+
 vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     float s=clamp((px.y-672.0)/244.0,0.0,1.0);
     vec2 target=vec2((px.x-1100.0)/(58.0+50.0*s),7.2*s/(.55+.45*s));
@@ -202,15 +264,24 @@ vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     // directional derivative intersects the grazing ray with that tangent.
     vec3 ray=normalize(vec3(.035,-.79,-mix(.43,.70,s)));
     vec3 point=vec3(target,0.0);
-    for (int i=0;i<3;++i) {
+    float detail = clamp(uPoolDetail,0.0,1.0);
+    PoolPacket packet;
+    if (detail > 0.0) packet = poolPacket(target,s,gust,detail);
+    for (int i=0;i<5;++i) {
+        if (i>=3 && detail==0.0) break;
         vec4 sim=poolState(point.xy,frame);
         vec3 ripple=capillary(point.xy,gust);
+        if (detail > 0.0) ripple += packetSurface(packet,point.xy-target);
         vec3 n=normalize(vec3(-sim.gb-ripple.yz,1.0));
         float distanceToSurface=(point.z-sim.r-ripple.x)*n.z;
-        point+=ray*clamp(distanceToSurface/max(.21,-dot(n,ray)),-.13,.13);
+        float correction=clamp(distanceToSurface/max(.21,-dot(n,ray)),-.13,.13);
+        point+=ray*(i<3 ? correction : detail*correction);
     }
     vec4 sim=poolState(point.xy,frame);
     vec3 ripple=capillary(point.xy,gust);
+    vec3 fine=vec3(0.0);
+    if (detail > 0.0) fine=packetSurface(packet,point.xy-target);
+    ripple+=fine;
     vec2 gradient=sim.gb+ripple.yz;
     vec3 N=normalize(vec3(-gradient,1.0));
     vec3 view=-ray;
@@ -227,6 +298,7 @@ vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     vec3 local=.59*refracted
         +.225*wetSample(uv,offset+vec2(5.3,2.3),vec2(0,1),base)
         +.185*wetSample(uv,offset-vec2(4.7,2.6),vec2(0,1),base);
+    local=mix(local,refracted,detail*(.13+.25*s));
     float fresnel=.0204+.9796*pow(1.0-face,5.0);
     vec2 skyUv=vec2(uv.x+.18*reflected.x,.615+.38*clamp(reflected.z,0.,1.));
     vec3 sky=environment(skyUv);
@@ -241,6 +313,11 @@ vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     float breakup=noise(patch*5.6+vec2(.22*sin(point.y*1.45),.11*cos(point.x*.92)));
     float granules=whitewaterDetail(vec2(patch.x*1.4,patch.y*.68),breakup);
     float foam=smoothstep(.18,.80,sim.a*(.81+.45*breakup)+granules*.65);
+    // A fine crest can gather bubbles from existing aerated water. Its cap
+    // uses the same resolved height and slope as the optical surface.
+    float crest=smoothstep(.12,.69,84.0*fine.x-dot(fine.yz,vec2(.71,.34)));
+    float whitecap=crest*smoothstep(.08,.42,sim.a);
+    foam+=detail*(.32*whitecap*(1.0-foam)-.12*(1.0-crest)*foam);
     vec3 froth=mix(vec3(.56,.69,.73),vec3(.80,.85,.86),clamp(.52+.34*breakup+granules*.65,0.,1.));
     water=mix(water,froth,.56*foam);
     return water;

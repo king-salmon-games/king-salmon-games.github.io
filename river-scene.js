@@ -50,7 +50,7 @@ async function textureImage(file, packed = false) {
 function loadAssets() {
   assetPromise ??= Promise.all([
     fetchAsset('weather.frag?v=1').then(r => r.text()),
-    fetchAsset('water.frag?v=3').then(r => r.text()),
+    fetchAsset('water.frag?v=4').then(r => r.text()),
     fetchAsset('wind.glsl?v=1').then(r => r.text()),
     textureImage('river-desktop.webp'), textureImage('water-mask.png?v=1'),
     textureImage('water-dynamics.webp?v=1', true),
@@ -118,7 +118,8 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     return {
       program, crop: gl.getUniformLocation(program, 'uCrop'),
       size: gl.getUniformLocation(program, 'uResolution'),
-      time: gl.getUniformLocation(program, 'uTime'), image: gl.getUniformLocation(program, 'uImage')
+      time: gl.getUniformLocation(program, 'uTime'), image: gl.getUniformLocation(program, 'uImage'),
+      detail: gl.getUniformLocation(program, 'uPoolDetail')
     };
   });
 
@@ -144,16 +145,17 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
   let envWidth = 0;
   let envHeight = 0;
 
-  function drawPass(pass, time, crop, width, height, imageUnit = 0) {
+  function drawPass(pass, time, crop, width, height, imageUnit = 0, poolDetail = 0) {
     gl.useProgram(pass.program);
     gl.uniform4fv(pass.crop, crop);
     gl.uniform2f(pass.size, width, height);
     gl.uniform1f(pass.time, time);
+    gl.uniform1f(pass.detail, poolDetail);
     gl.uniform1i(pass.image, imageUnit);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  function render(time, crop = fullLandscape, backdrop = false) {
+  function render(time, crop = fullLandscape, backdrop = false, poolDetail = 0) {
     const width = gl.drawingBufferWidth;
     const height = gl.drawingBufferHeight;
     // The sky/forest map also supplies incident light to the river. Keep the
@@ -188,7 +190,7 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     drawPass(copy, time, crop, width, height, 6);
-    drawPass(water, time, crop, width, height);
+    drawPass(water, time, crop, width, height, 0, poolDetail);
   }
   return { render };
 }
