@@ -61,80 +61,43 @@
     updateButtons();
   }
 
-  const audioToggle = document.querySelector('[data-audio-toggle]');
-  const AudioEngine = window.AudioContext || window.webkitAudioContext;
-  if (!audioToggle || !AudioEngine) return;
+  const water = document.querySelector('[data-river-water]');
+  const ambience = document.querySelector('[data-river-audio]');
+  if (!water || !ambience) return;
 
-  // Layer a low, broad waterfall roar with a narrower band of stream hiss.
-  // Create the audio only on request. A stereo buffer loops without a hard cut.
-  let audio;
-  let enabled = false;
-  let inView = true;
-  function makeRiverAudio() {
-    const ctx = new AudioEngine();
-    const rate = ctx.sampleRate;
-    const duration = 8;
-    const buffer = ctx.createBuffer(2, duration * rate, rate);
-    for (let c = 0; c < 2; c++) {
-      const channel = buffer.getChannelData(c);
-      let slow = 0;
-      let mid = 0;
-      const overlap = Math.floor(rate * 0.16);
-      const head = new Float32Array(overlap);
-      for (let i = 0; i < channel.length + overlap; i++) {
-        const noise = Math.random() * 2 - 1;
-        slow = (slow + noise * 0.065) / 1.065;
-        mid = (mid + noise * 0.32) / 1.32;
-        const swell = 0.88 + 0.12 * Math.sin(2 * Math.PI * i / channel.length + c * 0.5);
-        const sample = (1.8 * slow + 0.52 * mid + 0.09 * noise) * swell;
-        if (i < channel.length) channel[i] = sample;
-        else head[i - channel.length] = sample;
-      }
-      for (let i = 0; i < overlap; i++) {
-        const mix = i / overlap;
-        channel[i] = head[i] * (1 - mix) + channel[i] * mix;
+  // Muted inline video can begin while the browser waits for an audio gesture.
+  // Retry both media elements inside the gesture so each gets the same activation.
+  const gestures = ['click', 'touchend', 'keydown'];
+  function listenForGesture(needed) {
+    for (const type of gestures) {
+      if (needed) {
+        document.addEventListener(type, onGesture, { capture: true, passive: true });
+      } else {
+        document.removeEventListener(type, onGesture, true);
       }
     }
-    const sound = ctx.createBufferSource();
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.value = 4500;
-    const volume = ctx.createGain();
-    volume.gain.value = 0.3;
-    sound.buffer = buffer;
-    sound.loop = true;
-    sound.connect(filter).connect(volume).connect(ctx.destination);
-    sound.start();
-    return ctx;
   }
-  function syncAudio() {
-    const playing = enabled && inView && !document.hidden;
-    if (audio) {
-      (playing ? audio.resume() : audio.suspend()).catch(() => {
-        enabled = false;
-        showAudioState();
-      });
-    }
-    showAudioState();
+  async function startWaterfall() {
+    await Promise.allSettled([water.play(), ambience.play()]);
+    listenForGesture(water.paused || ambience.paused);
   }
-  function showAudioState() {
-    audioToggle.setAttribute('aria-pressed', String(enabled));
-    audioToggle.setAttribute('aria-label', enabled ? 'Mute river sound' : 'Enable river sound');
-    audioToggle.querySelector('[data-audio-label]').textContent = enabled ? 'Sound on' : 'Sound off';
+  function onGesture(event) {
+    if (event.isTrusted) startWaterfall();
   }
-  audioToggle.addEventListener('click', () => {
-    try {
-      if (!audio) audio = makeRiverAudio();
-      enabled = !enabled;
-      syncAudio();
-    } catch {
-      audioToggle.hidden = true;
-    }
+  // Some browsers select a video source before the mobile viewport settles.
+  const mobileSource = water.querySelector('source[media]');
+  const desktopSource = water.querySelector('source:not([media])');
+  const portrait = window.matchMedia(mobileSource.media);
+  function selectWaterfall() {
+    const source = portrait.matches ? mobileSource.src : desktopSource.src;
+    if ((water.src || water.currentSrc) !== source) water.src = source;
+    startWaterfall();
+  }
+  portrait.addEventListener('change', selectWaterfall);
+  window.addEventListener('pageshow', selectWaterfall);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) startWaterfall();
   });
-  new IntersectionObserver(([entry]) => {
-    inView = entry.isIntersecting;
-    syncAudio();
-  }).observe(document.querySelector('.river-hero'));
-  document.addEventListener('visibilitychange', syncAudio);
-  audioToggle.hidden = false;
+  listenForGesture(true);
+  selectWaterfall();
 })();

@@ -20,19 +20,18 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 | --- | --- |
 | `index.html` | Homepage, game collection order and links, studio introduction, and contact |
 | `styles.css` | Shared navigation, local fonts, colors, homepage layout, and responsive styles |
-| `site.js` | Mobile menu, swipeable game collection, and optional river audio |
-| `river-motion.js` | Salmon paths, body movement, splashes, video playback, and motion preferences |
-| `assets/river-scene/` | Desktop and portrait waterfall films, still backgrounds, salmon sprite, and image generation prompts |
+| `site.js` | Mobile menu, swipeable game collection, and waterfall playback |
+| `assets/river-scene/` | Desktop and portrait waterfall films, still backgrounds, a looping audio track, and the landscape art record |
 | `interior.css` | Project pages, wishlist, support, privacy, and custom 404 layouts |
 | `wumbos.html`, `creamcheese.html`, `pocketlink.html`, `nemus-obscurum.html`, `kakatta.html` | Individual project information, approved artwork, and wishlist links |
 | `wishlist.html`, `wishlist.js` | Select games and prepare an email signup request |
 | `support.html`, `privacy.html` | Studio contact information, game support, and privacy terms |
 
-## Salmon Run
+## Waterfall
 
-The responsive poster displays first. The matching silent, six-second waterfall video plays while the scene is visible. Two salmon follow separate paths from the brook toward the ledges. Their coordinates are relative to the landscape so droplets, ripples, and fish stay aligned in the portrait crop. The pause control freezes both motion layers. Visitors with reduced motion enabled start with a still composition and can opt into playback. The sound control independently enables synthesized river ambience.
+The homepage plays a six-second waterfall loop with a portrait crop for phones. A separate audio track supplies continuous river ambience. Playback starts on arrival where the browser allows audible autoplay. On browsers that require interaction, the first tap, click, or keypress starts the sound. Volume and muting follow the visitor’s browser and device settings.
 
-For art changes, the full-width source is `assets/river-scene/river-desktop.webp` (1717 × 916). The portrait poster uses pixels 820–1552 of that image. The optional [water renderer](tools/render_river.py) contains the flow masks and encodes both video sizes. Its `--help` describes dependencies and rendering options. You can edit page content, styling, and salmon choreography independently of the water renderer.
+For art changes, the full-width source is `assets/river-scene/river-desktop.webp` (1717 × 916). The portrait poster uses pixels 820–1552 of that image. The optional [water renderer](tools/render_river.py) contains the flow masks and encodes both video sizes. Its `--help` describes dependencies and rendering options. Page content and styling can be edited independently of the water renderer.
 
 ## Navigation
 
@@ -44,7 +43,7 @@ CreamFly is linked from both the homepage Cream Cheese section and its detail pa
 
 ## Artwork sources
 
-The river landscape and salmon were created with built-in ImageGen. The [art record](assets/river-scene/artwork.json) includes the full prompts and the filenames used by the site. Barlow Condensed and DM Sans are self-hosted with their licenses in `assets/fonts/`.
+The river landscape was created with built-in ImageGen. The [art record](assets/river-scene/artwork.json) includes the full landscape prompt and the filenames used by the site. Barlow Condensed and DM Sans are self-hosted with their licenses in `assets/fonts/`.
 
 The game imagery reuses artwork and development captures from the studio's source repositories. The copied opaque PNGs were encoded as JPEG at quality 86, preserving their dimensions and reducing the delivery files by about 80%. The transparent Cream Cheese × Phone wordmark remains PNG.
 

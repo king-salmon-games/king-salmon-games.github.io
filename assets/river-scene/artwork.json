@@ -10,16 +10,12 @@
     "prompt": "Use case: stylized-concept. Asset type: a single 2400x1280 cinematic ultra-wide 1.875:1 landscape environmental key art plate for a premium independent videogame studio's full-bleed homepage, no typography. Masterful, realistic game environment matte painting, impeccably composed like a big-budget title screen. A rugged coastal Pacific Northwest river valley in early autumn at the violet edge of blue hour. Camera just above moving water, looking upstream at an impressive stepped waterfall. The broad luminous silver-blue curtain and whitewater swimming with dark jade currents occupies the RIGHT and center-right (x=54%–93%, y=40%–74%), the brook and horizontal streaks of foam come forward to the bottom edge. Upper right shows layered pale atmospheric fir forests and a small break of blush-copper evening light through silver gray clouds. Upper left has steeply rising dark canyon forest, lower left has shadowy charcoal-green fir silhouettes and dark foreground basalt to naturally provide clear, calm negative space for overlay type. Strong composition, deliberate value grouping, atmospheric spatial depth, deep indigo shadows, textured wet mossy rock faces, opalescent white spray, luminous cold tonal whites, delicate silverlit ripples and a subtle warm tint behind the distant mountains. A beautiful fresh discoverable world, deep-toned and moody but with substantial luminous mist and daylight values on the right. The waterfall must have a convincing lip and landing pool for fish that will be added separately. Precision and material detail of premium environmental concept art with fine film grain. No people, fish or other animals, no manmade objects or trails, no buildings, no signs, no text, no labels, no interface elements, no borders.",
     "delivery": "1717 × 916 landscape and 733 × 916 portrait WebP posters. Localized flow and refraction in the cascade, pool, and spray were rendered as 1440 × 768 and 640 × 800 H.264 video loops at 24 fps."
   },
-  "chinook": {
-    "tool": "Built-in ImageGen",
-    "files": [
-      "salmon.webp"
-    ],
-    "prompt": "Use case: stylized-concept. Asset type: realistic high-end 3D game cinematic sprite for a dark, dusk-lit Pacific Northwest waterfall. Isolate a single anatomically correct full-grown male king salmon, in the midst of a powerful uphill leap, facing RIGHT, full side-profile with three-quarter depth and beautiful body torque. Head at right, tail at left, slightly raised head, main body axis almost horizontal within canvas, athletic arched back and curled curved forked tail, long sleek mature Chinook form. Entire fish from nose to tail visible within frame. Dramatic art-directed lighting as if photographed against a shadowy forest at blue hour: bright, warm silver copper-peach glimmer catching iridescent dark spotted scales along its back and flanks, slate blue/evergreen dorsal edge, subtle coral along lateral line and gill plate, silver underbelly reflecting cool sky. Eye glints, realistic fins, a slightly open hooked jaw. Strong sculptural silhouette read at thumbnail sizes, photoreal premium nature cinema frame with crisp details. Genuine clean TRANSPARENT background, no water, no lettering, no shadows cast on ground, no splash, no environment, just fish. Horizontal wide framing tightly fitted to silhouette.",
-    "delivery": "768 × 337 transparent WebP. Canvas animation flexes the tail, rotates the body on the arc, clips the fish at water level, and adds entry and landing spray."
-  },
   "share_preview": {
     "file": "studio-preview.jpg",
-    "delivery": "1200 × 630 JPEG composed from the homepage scene, salmon opening pose, and studio typography."
+    "delivery": "1200 × 630 JPEG composed from the forest waterfall and studio typography."
+  },
+  "ambience": {
+    "file": "waterfall.m4a",
+    "delivery": "Original 24-second stereo waterfall loop, synthesized from layered filtered noise and slow periodic variation, encoded in AAC for mobile and desktop playback."
   }
 }

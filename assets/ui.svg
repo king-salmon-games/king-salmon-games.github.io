@@ -6,10 +6,5 @@
   <symbol id="bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='M6.5 3.5h11v17l-5.5-3.8-5.5 3.8z'/></symbol>
   <symbol id="menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='M3 7h18M3 12h18M3 17h18'/></symbol>
   <symbol id="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='m5 5 14 14M19 5 5 19'/></symbol>
-  <symbol id="sound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='M3 9h4l5-4v14l-5-4H3zM15 8c2 2 2 6 0 8m3-11c4 4 4 10 0 14'/></symbol>
-  <symbol id="mute" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='M3 9h4l5-4v14l-5-4H3zM16 9l5 6m0-6-5 6'/></symbol>
-  <symbol id="pause" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='M8.5 5v14M15.5 5v14' stroke-width='3'/></symbol>
-  <symbol id="play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='m7 4 13 8-13 8z' fill='currentColor' stroke='none'/></symbol>
-  <symbol id="water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='M2 8c2-3 4 3 7 0s5 3 8 0 4 0 5 0M2 13c2-3 4 3 7 0s5 3 8 0 4 0 5 0M2 18c2-3 4 3 7 0s5 3 8 0 4 0 5 0'/></symbol>
   <symbol id="mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d='M3 5h18v14H3zM3 5l9 8 9-8'/></symbol>
 </svg>
