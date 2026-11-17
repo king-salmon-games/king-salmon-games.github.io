@@ -21,14 +21,10 @@
   "films": {
     "files": ["river-pool-desktop.mp4", "river-pool-mobile.mp4", "river-start-desktop.webp", "river-start-mobile.webp", "pool-detail-desktop.png", "pool-detail-mobile.png"],
     "source": "tools/render_river.py renders the landscape and the detailed pool at the same timestamp, packs both into one video frame per crop, extracts its opening still, and derives the registered pool mask from water-mask.png.",
-    "delivery": "48-second silent H.264 loops at 30 fps. The desktop frame contains a 1600 × 854 landscape with a 1600 × 240 detail strip. The portrait frame contains a 720 × 900 landscape with a 720 × 256 detail strip. The separate waterfall.m4a supplies the ambience."
+    "delivery": "48-second silent H.264 loops at 30 fps. The desktop frame contains a 1600 × 854 landscape with a 1600 × 240 detail strip. The portrait frame contains a 720 × 900 landscape with a 720 × 256 detail strip."
   },
   "share_preview": {
     "file": "studio-preview.jpg",
     "delivery": "1200 × 630 JPEG composed from the forest waterfall and studio typography."
-  },
-  "ambience": {
-    "file": "waterfall.m4a",
-    "delivery": "Original 24-second stereo waterfall loop, synthesized from layered filtered noise and slow periodic variation, encoded in AAC for mobile and desktop playback."
   }
 }

@@ -62,11 +62,8 @@
   }
 
   const water = document.querySelector('[data-river-water]');
-  const ambience = document.querySelector('[data-river-audio]');
-  if (!water || !ambience) return;
+  if (!water) return;
 
-  // Muted inline video can begin while the browser waits for an audio gesture.
-  // Retry both media elements inside the gesture so each gets the same activation.
   const surface = document.querySelector('[data-water-surface]');
   const poster = water.closest('.river-hero').querySelector('.scene-poster');
   function revealFilm() {
@@ -100,20 +97,19 @@
     }
   }
   async function startWaterfall() {
-    const live = surface?.hasAttribute('data-ready');
-    const playback = ambience.paused ? [ambience.play()] : [];
-    if (live) {
+    if (surface?.hasAttribute('data-ready')) {
       // Leave its last frame underneath the opaque canvas during the handoff.
       if (!water.paused) water.pause();
     } else if (water.paused) {
-      playback.push(water.play().catch(error => {
+      try {
+        await water.play();
+      } catch (error) {
         if (water.paused && (error.name === 'NotAllowedError' || error.name === 'NotSupportedError')) {
           videoUnavailable();
         }
-      }));
+      }
     }
-    await Promise.allSettled(playback);
-    listenForGesture((!surface?.hasAttribute('data-ready') && water.paused) || ambience.paused);
+    listenForGesture(!surface?.hasAttribute('data-ready') && water.paused);
   }
   function onGesture(event) {
     if (event.isTrusted) startWaterfall();

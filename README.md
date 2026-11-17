@@ -20,14 +20,14 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 | --- | --- |
 | `index.html` | Homepage, game collection order and links, studio introduction, and contact |
 | `styles.css` | Shared navigation, local fonts, colors, homepage layout, and responsive styles |
-| `site.js` | Mobile menu, swipeable game collection, ambience, and fallback video playback |
+| `site.js` | Mobile menu, swipeable game collection, and fallback video playback |
 | `water-surface.js` | Responsive landscape framing, frame budget, and fallback selection |
 | `pool-detail.js` | Scroll-driven pool detail and presentation of the synchronized pool strip on touch devices |
 | `river-scene.js` | WebGL renderer shared by the homepage and the film encoder |
 | `assets/river-scene/water.frag` | Falling sheets, simulated pool surface, reflections, foam, and spray |
 | `assets/river-scene/weather.frag` | Volumetric clouds, valley mist, and wind in the trees |
 | `assets/river-scene/wind.glsl` | Shared gust direction, timing, and cloud travel |
-| `assets/river-scene/` | Desktop and portrait waterfall films, still backgrounds, a looping audio track, and the landscape art record |
+| `assets/river-scene/` | Silent desktop and portrait waterfall films, still backgrounds, and the landscape art record |
 | `interior.css` | Project pages, wishlist, support, privacy, and custom 404 layouts |
 | `wumbos.html`, `creamcheese.html`, `pocketlink.html`, `nemus-obscurum.html`, `kakatta.html` | Individual project information, approved artwork, and wishlist links |
 | `wishlist.html`, `wishlist.js` | Select games and prepare an email signup request |
@@ -43,7 +43,7 @@ The sky shader traces rays through a wind-driven, three-dimensional cloud layer.
 
 Touch-first devices play a 30 fps film rendered from the same shaders. Each decoded frame contains the visible landscape and a second rendering of its foreground pool at full detail. Scrolling blends that strip over the water using a shoreline mask. The strip and the landscape share a playback clock through the entire 48-second loop. The visible desktop and portrait compositions are 1600 × 854 and 720 × 900. Each opening still contains only the visible composition.
 
-On desktop, WebGL takes over at the film's current playhead and targets 30 fps. It repaints the full landscape whenever the drawing buffer changes size and limits the simulation step after a dropped frame. The film also covers GPU interruptions and sustained slow rendering. On touch devices WebGL can take over if video playback fails. The separate ambience starts on arrival where audible autoplay is allowed, or on the first tap, click, or keypress when the browser requires interaction.
+On desktop, WebGL takes over at the film's current playhead and targets 30 fps. It repaints the full landscape whenever the drawing buffer changes size and limits the simulation step after a dropped frame. The film also covers GPU interruptions and sustained slow rendering. On touch devices WebGL can take over if video playback fails.
 
 The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916). The portrait crop uses columns 820–1552. From the checkout root, rebuild the assets affected by your edits.
 
