@@ -67,6 +67,7 @@
 
   // Muted inline video can begin while the browser waits for an audio gesture.
   // Retry both media elements inside the gesture so each gets the same activation.
+  const surface = document.querySelector('[data-water-surface]');
   const gestures = ['click', 'touchend', 'keydown'];
   function listenForGesture(needed) {
     for (const type of gestures) {
@@ -78,8 +79,13 @@
     }
   }
   async function startWaterfall() {
-    await Promise.allSettled([water.play(), ambience.play()]);
-    listenForGesture(water.paused || ambience.paused);
+    // Once the GPU has actually drawn, stop decoding the backup film.
+    water.hidden = Boolean(surface?.hasAttribute('data-ready'));
+    const playback = [ambience.play()];
+    if (water.hidden) water.pause();
+    else playback.push(water.play());
+    await Promise.allSettled(playback);
+    listenForGesture((!water.hidden && water.paused) || ambience.paused);
   }
   function onGesture(event) {
     if (event.isTrusted) startWaterfall();
@@ -93,6 +99,7 @@
     if ((water.src || water.currentSrc) !== source) water.src = source;
     startWaterfall();
   }
+  surface?.addEventListener('water-renderer-change', startWaterfall);
   portrait.addEventListener('change', selectWaterfall);
   window.addEventListener('pageshow', selectWaterfall);
   document.addEventListener('visibilitychange', () => {

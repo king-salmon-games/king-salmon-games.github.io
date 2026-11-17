@@ -67,10 +67,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .menu-toggle[aria-expanded="true"] .icon-close { display: block; }
 
 .river-hero { position: relative; isolation: isolate; overflow: hidden; background: #152026; height: clamp(482px, 63.8svh, 766px); }
-.scene-poster, .scene-poster img, [data-river-water], .scene-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
+.scene-poster, .scene-poster img, [data-river-water], [data-water-surface], .scene-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
 .scene-poster img, [data-river-water] { object-fit: cover; object-position: center; }
 .scene-poster { z-index: -5; }
 [data-river-water] { z-index: -4; pointer-events: none; }
+[data-water-surface] { z-index: -3; opacity: 0; pointer-events: none; }
+[data-water-surface][data-ready] { opacity: 1; }
 .scene-shade { z-index: -2; pointer-events: none; background: linear-gradient(90deg, rgba(6,13,15,.68),rgba(6,13,15,.47) 25%,rgba(6,13,15,.05) 58%,transparent 76%), linear-gradient(0deg,rgba(7,13,16,.8),transparent 23%,transparent 88%,rgba(7,13,16,.12)); }
 .hero-inner { height: 100%; display: flex; align-items: center; }
 .hero-copy { position: relative; padding-bottom: 24px; }

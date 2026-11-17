@@ -20,7 +20,9 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 | --- | --- |
 | `index.html` | Homepage, game collection order and links, studio introduction, and contact |
 | `styles.css` | Shared navigation, local fonts, colors, homepage layout, and responsive styles |
-| `site.js` | Mobile menu, swipeable game collection, and waterfall playback |
+| `site.js` | Mobile menu, swipeable game collection, ambience, and fallback video playback |
+| `water-surface.js` | WebGL setup, responsive landscape framing, frame budget, and fallback selection |
+| `assets/river-scene/water.frag` | Signed distance field for the sheets and pool, refraction, crest foam, and spray |
 | `assets/river-scene/` | Desktop and portrait waterfall films, still backgrounds, a looping audio track, and the landscape art record |
 | `interior.css` | Project pages, wishlist, support, privacy, and custom 404 layouts |
 | `wumbos.html`, `creamcheese.html`, `pocketlink.html`, `nemus-obscurum.html`, `kakatta.html` | Individual project information, approved artwork, and wishlist links |
@@ -29,9 +31,11 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 
 ## Waterfall
 
-The homepage plays a six-second waterfall loop with a portrait crop for phones. A separate audio track supplies continuous river ambience. Playback starts on arrival where the browser allows audible autoplay. On browsers that require interaction, the first tap, click, or keypress starts the sound. Volume and muting follow the visitor’s browser and device settings.
+The homepage draws moving water over the forest artwork with WebGL. The fragment shader traces short viewing rays toward a signed distance field that describes a bent sheet of water. Its slope determines how the surface refracts the landscape and reflects the sky. The falling curtains accelerate down the ledges, while the pool has broader waves that spread from the impact zone. A three-channel mask confines the sheet, brook, and spray effects to their corresponding areas.
 
-For art changes, the full-width source is `assets/river-scene/river-desktop.webp` (1717 × 916). The portrait poster uses pixels 820–1552 of that image. The optional [water renderer](tools/render_river.py) contains the flow masks and encodes both video sizes. Its `--help` describes dependencies and rendering options. Page content and styling can be edited independently of the water renderer.
+The renderer targets 30 frames per second and reduces its internal resolution under sustained load. A six-second video supplies immediate motion during startup and takes over if WebGL is unavailable, interrupted, or too slow. The separate ambience track continues through these changes. Sound starts on arrival where audible autoplay is allowed, or on the first tap, click, or keypress when the browser requires interaction.
+
+The full landscape is `assets/river-scene/river-desktop.webp` (1717 × 916). The portrait crop uses columns 820–1552. To edit the water boundaries, update [the mask generator](tools/build_water_mask.py) and run `python tools/build_water_mask.py`. It produces `assets/river-scene/water-mask.png`. The [video renderer](tools/render_river.py) encodes the two fallback films. Both tools document their optional dependencies in `--help`.
 
 ## Navigation
 
