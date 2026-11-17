@@ -5,13 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Page Not Found — King Salmon Games</title>
   <meta name="robots" content="noindex">
-  <meta name="theme-color" content="#f6f6f3">
+  <meta name="theme-color" content="#0b1013">
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
-  <link rel="stylesheet" href="/styles.css?v=12">
+  <link rel="preload" as="image" href="/assets/ui.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=13">
+  <link rel="stylesheet" href="/interior.css?v=1">
+  <script src="/site.js?v=1" defer></script>
 </head>
-<body>
+<body class="interior-page error-page" id="top">
   <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header shell"><a class="wordmark" href="/" aria-label="King Salmon Games home"><img src="/assets/king-salmon-mark.png" width="40" height="40" alt=""><span>King Salmon Games</span></a><nav aria-label="Primary navigation"><a href="/#games">Games</a><a href="/#contact">Contact</a></nav></header>
-  <main class="legal-main" id="main"><section class="legal-page section-shell error-page"><p class="error-number">404</p><h1>Page not found.</h1><p class="lede">The page you’re looking for doesn’t exist or has moved.</p><a class="button" href="/#games">View our projects <span aria-hidden="true">→</span></a></section></main>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="/" aria-label="King Salmon Games home">
+        <img src="/assets/studio-mark.webp" width="51" height="47" alt="">
+        <span class="brand-type"><strong>King Salmon</strong><span>Games</span></span>
+      </a>
+      <nav class="primary-nav" id="primary-nav" aria-label="Primary">
+        <a href="/#games">Games</a><a href="/#studio">Studio</a><a href="/#contact">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <a class="nav-wishlist" href="/wishlist.html"><svg class="icon" aria-hidden="true" focusable="false"><use href="/assets/ui.svg#bookmark"></use></svg> Wishlist</a>
+        <button type="button" class="menu-toggle" aria-controls="primary-nav" aria-expanded="false" aria-label="Open menu" hidden><svg class="icon icon-menu" aria-hidden="true" focusable="false"><use href="/assets/ui.svg#menu"></use></svg><svg class="icon icon-close" aria-hidden="true" focusable="false"><use href="/assets/ui.svg#close"></use></svg></button>
+      </div>
+    </div>
+  </header>
+  <main class="legal-main" id="main">
+    <section class="error-content inner-shell">
+      <p class="inner-label">Error 404</p>
+      <h1>Page not found</h1>
+      <p>The page you’re looking for doesn’t exist or has moved.</p>
+      <a class="inner-action" href="/#games">View our games <span aria-hidden="true">→</span></a>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <span>© 2026 King Salmon Games</span>
+      <nav aria-label="Legal and support"><a href="/privacy.html">Privacy</a><a href="/support.html">Support</a><a href="#top">Back to top <svg class="icon up-arrow" aria-hidden="true" focusable="false"><use href="/assets/ui.svg#arrow-right"></use></svg></a></nav>
+    </div>
+  </footer>
 </body>
 </html>

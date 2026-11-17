@@ -5,21 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>King Salmon Games</title>
   <meta name="description" content="Explore Wumbos, Cream Cheese × Phone, PocketLink, Nemus Obscurum, and Kakatta. Discover what's next from King Salmon Games and join a wishlist.">
-  <meta name="theme-color" content="#f6f6f3">
+  <meta name="theme-color" content="#0d1113">
   <link rel="canonical" href="https://kingsalmongames.com/">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
   <link rel="apple-touch-icon" sizes="192x192" href="assets/icon-192.png">
-  <link rel="stylesheet" href="styles.css?v=12">
+  <link rel="preload" as="font" href="assets/fonts/barlow-condensed-700.woff2" type="font/woff2" crossorigin>
+  <link rel="preload" as="image" href="assets/ui.svg" type="image/svg+xml">
+  <link rel="preload" as="image" href="assets/river-scene/salmon.webp" type="image/webp">
+  <link rel="stylesheet" href="styles.css?v=13">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="King Salmon Games">
   <meta property="og:title" content="King Salmon Games">
-  <meta property="og:description" content="Five projects. A few clues. Explore Wumbos, Cream Cheese × Phone, PocketLink, Nemus Obscurum, and Kakatta.">
+  <meta property="og:description" content="Explore Wumbos, Cream Cheese × Phone, PocketLink, Nemus Obscurum, and Kakatta.">
   <meta property="og:url" content="https://kingsalmongames.com/">
-  <meta property="og:image" content="https://kingsalmongames.com/assets/king-salmon-mark.png">
-  <meta property="og:image:width" content="512">
-  <meta property="og:image:height" content="512">
-  <meta property="og:image:alt" content="The King Salmon Games crowned salmon mark.">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://kingsalmongames.com/assets/river-scene/studio-preview.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="King Salmon Games. Two Chinook salmon leap over a forest waterfall at dusk.">
+  <meta name="twitter:card" content="summary_large_image">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -31,114 +34,136 @@
     "description": "Independent studio creating Wumbos, Cream Cheese × Phone, PocketLink, Nemus Obscurum, and Kakatta."
   }
   </script>
+  <script src="site.js?v=1" defer></script>
+  <script src="river-motion.js?v=1" defer></script>
 </head>
 <body class="home-page" id="top">
   <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header shell">
-    <a class="wordmark" href="index.html" aria-label="King Salmon Games home">
-      <img src="assets/king-salmon-mark.png" width="40" height="40" alt="">
-      <span>King Salmon Games</span>
-    </a>
-    <nav aria-label="Primary navigation">
-      <a href="#games">Games</a>
-      <a href="wishlist.html">Wishlist</a>
-      <a href="#contact">Contact</a>
-    </nav>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="index.html" aria-label="King Salmon Games home">
+        <img src="assets/studio-mark.webp" width="51" height="47" alt="">
+        <span class="brand-type"><strong>King Salmon</strong><span>Games</span></span>
+      </a>
+      <nav class="primary-nav" id="primary-nav" aria-label="Primary">
+        <a href="#games">Games</a><a href="#studio">Studio</a><a href="#contact">Contact</a>
+      </nav>
+      <div class="header-actions">
+        <a class="nav-wishlist" href="wishlist.html"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg> Wishlist</a>
+        <button type="button" class="menu-toggle" aria-controls="primary-nav" aria-expanded="false" aria-label="Open menu" hidden><svg class="icon icon-menu" aria-hidden="true" focusable="false"><use href="assets/ui.svg#menu"></use></svg><svg class="icon icon-close" aria-hidden="true" focusable="false"><use href="assets/ui.svg#close"></use></svg></button>
+      </div>
+    </div>
   </header>
-
   <main id="main">
-    <section class="intro shell" aria-labelledby="intro-title">
-      <h1 id="intro-title">Independent<br>game studio.</h1>
-      <div class="intro-note">
-        <p>We’re King Salmon Games. Here’s what we’re working on.</p>
-        <a class="inline-link" href="#games">Explore our projects <span aria-hidden="true">↓</span></a>
+    <section class="river-hero" data-river-scene aria-labelledby="hero-title">
+      <picture class="scene-poster">
+        <source media="(max-width: 680px)" srcset="assets/river-scene/river-mobile.webp">
+        <img src="assets/river-scene/river-desktop.webp" width="1717" height="916" alt="" fetchpriority="high">
+      </picture>
+      <video data-river-water data-desktop-src="assets/river-scene/river-desktop.mp4" data-mobile-src="assets/river-scene/river-mobile.mp4" aria-hidden="true" muted playsinline loop preload="none"></video>
+      <canvas data-river-motion aria-hidden="true"></canvas>
+      <noscript><img class="still-salmon" src="assets/river-scene/salmon.webp" alt=""></noscript>
+      <div class="scene-shade" aria-hidden="true"></div>
+      <div class="shell hero-inner">
+        <div class="hero-copy">
+          <p class="studio-label">Independent game studio</p>
+          <h1 id="hero-title"><span>King Salmon</span> <em>Games</em></h1>
+          <a class="explore-link" href="#games">Explore games <svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-down-right"></use></svg></a>
+        </div>
+      </div>
+      <div class="shell scene-toolbar">
+        <span class="scene-name"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#water"></use></svg> Salmon Run</span>
+        <div class="scene-controls">
+          <button class="ambience" type="button" aria-pressed="false" aria-label="Enable river sound" data-audio-toggle hidden><svg class="icon icon-muted" aria-hidden="true" focusable="false"><use href="assets/ui.svg#mute"></use></svg><svg class="icon icon-sound" aria-hidden="true" focusable="false"><use href="assets/ui.svg#sound"></use></svg><span data-audio-label>Sound off</span></button>
+          <button class="motion-toggle" type="button" aria-label="Pause scene motion" data-motion-toggle hidden><svg class="icon icon-pause" aria-hidden="true" focusable="false"><use href="assets/ui.svg#pause"></use></svg><svg class="icon icon-play" aria-hidden="true" focusable="false"><use href="assets/ui.svg#play"></use></svg></button>
+        </div>
+      </div>
+      <span class="sr-only">A king salmon leaps upstream through a forest waterfall at dusk.</span>
+    </section>
+    <section class="collection shell" id="games" aria-labelledby="games-heading">
+      <div class="collection-heading">
+        <div class="collection-title"><span class="slash-mark" aria-hidden="true"></span><h2 id="games-heading">Our games</h2><span class="game-count" aria-label="Five projects">05</span></div>
+        <div class="collection-tools">
+          <span class="dev-status"><i aria-hidden="true"></i>In development</span>
+          <div class="gallery-buttons" hidden>
+            <button class="round-button" type="button" aria-label="Previous games" aria-controls="game-track" data-previous><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arrow-left"></use></svg></button>
+            <button class="round-button" type="button" aria-label="Next games" aria-controls="game-track" data-next><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arrow-right"></use></svg></button>
+          </div>
+        </div>
+      </div>
+      <ul class="game-track" id="game-track" aria-label="Game collection">
+          <li class="game-card" id="wumbos">
+            <span id="trade" class="legacy-anchor"></span><span id="manipulate" class="legacy-anchor"></span><span id="survive" class="legacy-anchor"></span><span id="customize" class="legacy-anchor"></span><div class="game-cover">
+              <a href="wumbos.html" class="game-image" aria-label="Explore Wumbos"><img src="assets/gallery/wumbos.webp" width="840" height="530" alt="Blue Wumbos in office attire trading in front of market screens." loading="lazy"></a>
+              <a class="card-wishlist" aria-label="Wishlist Wumbos" href="wishlist.html?game=wumbos"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
+            </div>
+            <div class="game-details">
+              <a class="game-name" href="wumbos.html"><h3>Wumbos</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
+              <p>Corporate roguelike</p>
+            </div>
+          </li>
+          <li class="game-card" id="nemus-obscurum">
+            <div class="game-cover">
+              <a href="nemus-obscurum.html" class="game-image" aria-label="Explore Nemus Obscurum"><img src="assets/gallery/nemus.webp" width="840" height="530" alt="Old trees and tangled roots surround a misty forest path." loading="lazy"></a>
+              <a class="card-wishlist" aria-label="Wishlist Nemus Obscurum" href="wishlist.html?game=nemus-obscurum"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
+            </div>
+            <div class="game-details">
+              <a class="game-name" href="nemus-obscurum.html"><h3>Nemus Obscurum</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
+              <p>Platformer / simulation</p>
+            </div>
+          </li>
+          <li class="game-card" id="kakatta">
+            <div class="game-cover">
+              <a href="kakatta.html" class="game-image" aria-label="Explore Kakatta"><img src="assets/gallery/kakatta.webp" width="840" height="530" alt="A silver salmon leaps above a sunlit mountain river." loading="lazy"></a>
+              <a class="card-wishlist" aria-label="Wishlist Kakatta" href="wishlist.html?game=kakatta"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
+            </div>
+            <div class="game-details">
+              <a class="game-name" href="kakatta.html"><h3>Kakatta</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
+              <p>Action fishing</p>
+            </div>
+          </li>
+          <li class="game-card" id="creamcheese">
+            <div class="game-cover">
+              <a href="creamcheese.html" class="game-image" aria-label="Explore Cream Cheese × Phone"><img src="assets/gallery/creamcheese.webp" width="840" height="530" alt="The cream-haired character cradles a silver-wrapped block of cream cheese." loading="lazy"></a>
+              <a class="card-wishlist" aria-label="Wishlist Cream Cheese × Phone" href="wishlist.html?game=creamcheese"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
+            </div>
+            <div class="game-details">
+              <a class="game-name" href="creamcheese.html"><h3>Cream Cheese × Phone</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
+              <p>3D puzzle adventure</p>
+            </div><a class="creamfly" href="https://creamfly.kingsalmongames.chatgpt.site">CreamFly <svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg> <span>Invited access</span></a>
+          </li>
+          <li class="game-card" id="pocketlink">
+            <div class="game-cover">
+              <a href="pocketlink.html" class="game-image" aria-label="Explore PocketLink"><img src="assets/gallery/pocketlink.webp" width="840" height="530" alt="Two colorful game cartridges connect inside a purple pocket." loading="lazy"></a>
+              <a class="card-wishlist" aria-label="Wishlist PocketLink" href="wishlist.html?game=pocketlink"><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#bookmark"></use></svg></a>
+            </div>
+            <div class="game-details">
+              <a class="game-name" href="pocketlink.html"><h3>PocketLink</h3><svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
+              <p>Retro game linking</p>
+            </div>
+          </li>
+      </ul>
+    </section>
+    <section class="studio-block shell" id="studio" aria-labelledby="studio-heading">
+      <div class="studio-panel">
+        <img class="studio-art" src="assets/gallery/studio.webp" width="1000" height="563" loading="lazy" alt="A crowned salmon in a swirl of blue water.">
+        <div class="studio-info">
+          <h2 id="studio-heading">The studio</h2>
+          <p>We’re King Salmon Games, an independent studio exploring corporate roguelikes, pocket-sized puzzles, and wild rivers.</p>
+          <a class="text-link" href="wishlist.html">Follow a project <svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arrow-right"></use></svg></a>
+        </div>
       </div>
     </section>
-
-    <section class="games-section shell" id="games" aria-labelledby="games-title">
-      <div class="section-heading">
-        <h2 id="games-title">Projects</h2>
-        <p>All in development</p>
-      </div>
-      <div class="project-grid">
-        <article class="game" id="wumbos" aria-labelledby="wumbos-title">
-          <span class="fragment-target" id="trade"></span><span class="fragment-target" id="manipulate"></span><span class="fragment-target" id="survive"></span><span class="fragment-target" id="customize"></span>
-          <a class="game-art art-wumbos" href="wumbos.html" aria-label="Explore Wumbos">
-            <img src="assets/wumbos-feature-manipulate-v1.jpg" width="1672" height="941" alt="Three blue Wumbos in office attire sit around a boardroom table." fetchpriority="high">
-          </a>
-          <div class="game-heading"><h3 id="wumbos-title"><a href="wumbos.html">Wumbos</a></h3><p>Corporate roguelike</p></div>
-          <p class="game-description">Build your Wumbo. Trade a volatile market. Navigate office politics and live with the consequences.</p>
-          <div class="game-bottom"><a class="inline-link" href="wumbos.html">Explore Wumbos <span aria-hidden="true">→</span></a><a class="inline-link" href="wishlist.html?game=wumbos" aria-label="Wishlist Wumbos">Wishlist <span aria-hidden="true">+</span></a></div>
-        </article>
-
-        <article class="game" id="creamcheese" aria-labelledby="creamcheese-title">
-          <a class="game-art art-cream" href="creamcheese.html" aria-label="Explore Cream Cheese × Phone">
-            <img src="assets/creamcheese-character.jpg" width="1024" height="1024" alt="The cream-haired Cream Cheese × Phone character holds a block of cream cheese in its silver wrapper." fetchpriority="high">
-          </a>
-          <div class="game-heading"><h3 id="creamcheese-title"><a href="creamcheese.html">Cream Cheese × Phone</a></h3><p>3D puzzle adventure</p></div>
-          <p class="game-description">Roll a block of cream cheese through six precarious puzzles. Match your footprint and protect your glass faces.</p>
-          <div class="game-bottom"><a class="inline-link" href="creamcheese.html">Explore Cream Cheese <span aria-hidden="true">→</span></a><a class="inline-link" href="wishlist.html?game=creamcheese" aria-label="Wishlist Cream Cheese × Phone">Wishlist <span aria-hidden="true">+</span></a></div>
-          <p class="related-project">Also explore <a href="https://creamfly.kingsalmongames.chatgpt.site">CreamFly <span aria-hidden="true">↗</span></a> <span>· Invited access</span></p>
-        </article>
-
-        <article class="game" id="pocketlink" aria-labelledby="pocketlink-title">
-          <a class="game-art art-pocket" href="pocketlink.html" aria-label="Explore PocketLink">
-            <img src="assets/pocketlink-artwork.jpg" width="1024" height="1024" alt="Red and green cartridges linked by a cable inside a translucent purple pocket." loading="lazy">
-          </a>
-          <div class="game-heading"><h3 id="pocketlink-title"><a href="pocketlink.html">PocketLink</a></h3><p>Retro game linking</p></div>
-          <p class="game-description">Your retro games, connected. Play GB, GBC, and GBA games on iPhone and iPad, and link compatible games with friends. Games not included.</p>
-          <div class="game-bottom"><a class="inline-link" href="pocketlink.html">Explore PocketLink <span aria-hidden="true">→</span></a><a class="inline-link" href="wishlist.html?game=pocketlink" aria-label="Wishlist PocketLink">Wishlist <span aria-hidden="true">+</span></a></div>
-        </article>
-
-        <article class="game" id="nemus-obscurum" aria-labelledby="nemus-title">
-          <a class="game-art art-icon art-nemus" href="nemus-obscurum.html" aria-label="Explore Nemus Obscurum">
-            <img src="assets/nemus-app-icon.jpg" width="1024" height="1024" alt="Nemus Obscurum app icon: ancient trees and tangled roots disappear into a dark, misty forest." loading="lazy">
-          </a>
-          <div class="game-heading"><h3 id="nemus-title"><a href="nemus-obscurum.html">Nemus Obscurum</a></h3><p>Platformer → simulation &amp; strategy</p></div>
-          <p class="game-description">It starts beneath the canopy. Run, leap, and adapt in a mysterious forest, as a platforming journey grows into a deeper game of simulation and strategy.</p>
-          <div class="game-bottom"><a class="inline-link" href="nemus-obscurum.html">Explore Nemus Obscurum <span aria-hidden="true">→</span></a><a class="inline-link" href="wishlist.html?game=nemus-obscurum" aria-label="Wishlist Nemus Obscurum">Wishlist <span aria-hidden="true">+</span></a></div>
-        </article>
-
-        <article class="game" id="kakatta" aria-labelledby="kakatta-title">
-          <a class="game-art art-icon art-kakatta" href="kakatta.html" aria-label="Explore Kakatta">
-            <img src="assets/kakatta-app-icon.jpg" width="1024" height="1024" alt="Kakatta app icon: a silver Atlantic salmon leaps from a turquoise mountain river." loading="lazy">
-          </a>
-          <div class="game-heading"><h3 id="kakatta-title"><a href="kakatta.html">Kakatta</a></h3><p>Action fishing</p></div>
-          <p class="game-description">Flick to cast. Time the hook. Work the rod and reel to land your next great catch in a first-person fishing game for iPhone.</p>
-          <div class="game-bottom"><a class="inline-link" href="kakatta.html">Explore Kakatta <span aria-hidden="true">→</span></a><a class="inline-link" href="wishlist.html?game=kakatta" aria-label="Wishlist Kakatta">Wishlist <span aria-hidden="true">+</span></a></div>
-        </article>
-
-        <article class="wishlist-card" aria-labelledby="wishlist-card-title">
-          <p class="eyebrow">Something caught your eye?</p>
-          <h3 id="wishlist-card-title">Stay curious.<br>Stay in the loop.</h3>
-          <p>Pick a favorite or follow all five. Join our email wishlists for development news, playtesting opportunities, and launch updates.</p>
-          <a class="button" href="wishlist.html">Choose your games <span aria-hidden="true">→</span></a>
-          <a class="inline-link" href="wishlist.html?game=all">Wishlist all games <span aria-hidden="true">+</span></a>
-        </article>
-      </div>
-      <p class="artwork-note">Promotional artwork and app icons. All projects are in development.</p>
-    </section>
-
-    <section class="studio-section shell" id="studio" aria-labelledby="studio-title">
-      <h2 id="studio-title">The studio</h2>
-      <div class="studio-copy">
-        <p>King Salmon Games is an independent game studio.</p>
-        <p>Our projects span corporate roguelikes, 3D puzzles, retro game linking, a forest journey that grows into simulation and strategy, and action fishing. They’re all in development. Find something that speaks to you and follow along.</p>
-      </div>
-    </section>
-
-    <section class="contact-section shell" id="contact" aria-labelledby="contact-title">
-      <div><h2 id="contact-title">Get in touch.</h2><p>Playtesting, project questions, or a simple hello.</p></div>
-      <div class="contact-links">
-        <a class="contact-email" href="mailto:bigkingsalmongames@gmail.com">bigkingsalmongames@gmail.com <span aria-hidden="true">↗</span></a>
-        <a class="inline-link" href="support.html">Game support <span aria-hidden="true">↗</span></a>
-      </div>
+    <section class="contact-block shell" id="contact" aria-labelledby="contact-heading">
+      <div><h2 id="contact-heading">Get in touch</h2><p>Playtesting, game support, and studio inquiries.</p></div>
+      <a class="contact-email" href="mailto:bigkingsalmongames@gmail.com">bigkingsalmongames@gmail.com <svg class="icon" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arr-up-right"></use></svg></a>
     </section>
   </main>
-
-  <footer class="site-footer shell">
-    <span>© 2026 King Salmon Games</span>
-    <nav aria-label="Legal and support"><a href="privacy.html">Privacy</a><a href="support.html">Support</a><a href="#top">Back to top <span aria-hidden="true">↑</span></a></nav>
+  <footer class="site-footer">
+    <div class="shell footer-inner">
+      <span>© 2026 King Salmon Games</span>
+      <nav aria-label="Legal and support"><a href="privacy.html">Privacy</a><a href="support.html">Support</a><a href="#top">Back to top <svg class="icon up-arrow" aria-hidden="true" focusable="false"><use href="assets/ui.svg#arrow-right"></use></svg></a></nav>
+    </div>
   </footer>
 </body>
 </html>
