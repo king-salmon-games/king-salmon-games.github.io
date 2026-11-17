@@ -18,10 +18,61 @@ try:
 except ImportError:
     cv2 = None
 
-from render_river import ASSETS, BROOK, HEIGHT, LEDGES, SPRAY, WIDTH, feathered_mask, smoothstep
+ASSETS = Path(__file__).resolve().parents[1] / "assets" / "river-scene"
+WIDTH, HEIGHT = 1717, 916
+
+# Each ledge has a separate outline and feather radius in pixels so the
+# exposed basalt between tiers stays in place as water travels over it.
+LEDGES = [
+    (5, [
+        (980, 378), (1015, 370), (1052, 371), (1054, 388), (1093, 383),
+        (1122, 370), (1161, 372), (1215, 364), (1294, 361), (1394, 349),
+        (1471, 330), (1555, 317), (1623, 303), (1630, 340), (1608, 405),
+        (1605, 437), (1543, 485), (1503, 553), (1460, 618), (1418, 681),
+        (1363, 696), (1037, 687), (1048, 613), (1039, 530), (1000, 465),
+        (964, 448), (989, 410),
+    ]),
+    (3, [(850, 409), (890, 409), (886, 448), (895, 461), (852, 462), (845, 448)]),
+    (4, [
+        (992, 456), (1024, 457), (1042, 478), (1036, 519), (1051, 565),
+        (1036, 610), (991, 604), (951, 572), (858, 570), (859, 522),
+        (889, 481), (951, 468),
+    ]),
+    (3, [
+        (742, 510), (791, 486), (856, 472), (915, 472), (904, 496),
+        (867, 556), (850, 570), (764, 560), (725, 554),
+    ]),
+    (4, [
+        (738, 570), (795, 574), (860, 593), (917, 608), (952, 622), (989, 665),
+        (988, 685), (783, 695), (742, 678), (758, 641), (729, 610),
+    ]),
+]
+
+BROOK = [
+    (478, 702), (625, 693), (866, 686), (1157, 693), (1350, 696), (1438, 699),
+    (1507, 689), (1643, 729), (1717, 711), (1717, 916), (868, 916), (835, 880),
+    (750, 866), (678, 854), (624, 817), (564, 801), (568, 766), (475, 737),
+]
+
+SPRAY = [
+    (939, 637), (1024, 587), (1106, 586), (1182, 607), (1336, 555), (1510, 471),
+    (1561, 453), (1560, 486), (1493, 558), (1439, 613), (1403, 666), (1381, 704),
+    (1109, 710), (948, 686),
+]
 
 
-# The offline film's traces identify the five tiers. The live shader adds
+def feathered_mask(points, radius):
+    mask = np.zeros((HEIGHT, WIDTH), dtype=np.uint8)
+    cv2.fillPoly(mask, [np.array(points, dtype=np.int32)], 255, lineType=cv2.LINE_AA)
+    return cv2.GaussianBlur(mask, (0, 0), radius).astype(np.float32) / 255
+
+
+def smoothstep(values):
+    t = np.clip(values, 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+# The water outlines identify the five tiers. The material mask adds
 # normals and refraction, so exposed islands within those outlines need holes.
 EXPOSED_BASALT = [
     (3, [(871, 481), (901, 468), (928, 465), (954, 464), (979, 456),

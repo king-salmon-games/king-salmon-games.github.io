@@ -1,34 +1,24 @@
+import { createRiverScene, landscape, openSceneContext, sceneStartTime } from './river-scene.js?v=1';
+
 (() => {
   const canvas = document.querySelector('[data-water-surface]');
   if (!canvas) return;
 
   const hero = canvas.closest('.river-hero');
+  const film = hero.querySelector('[data-river-water]');
   const portrait = window.matchMedia('(max-width: 680px)');
   let gl;
   try {
-    gl = canvas.getContext('webgl', {
-      alpha: true, premultipliedAlpha: false, antialias: false, depth: false, stencil: false
-    });
+    gl = openSceneContext(canvas);
   } catch {
     // Browser privacy settings can prevent context creation.
     return;
   }
   if (!gl) return;
 
-  const vertexSource = `
-    attribute vec2 aPosition;
-    varying vec2 vUv;
-    void main() {
-      vUv = aPosition * 0.5 + 0.5;
-      gl_Position = vec4(aPosition, 0.0, 1.0);
-    }`;
-
-  // The portrait poster is cropped from columns [820, 1553) of the same landscape.
-  const sceneWidth = 1717;
-  const sceneHeight = 916;
   const frameInterval = 1000 / 30;
-  let uniforms;
-  let assets;
+  const crop = new Float32Array(4);
+  let scene;
   let generation = 0;
   let frame = 0;
   let nextFrame = 0;
@@ -42,12 +32,15 @@
 
   function showSurface(ready) {
     if (canvas.hasAttribute('data-ready') === ready) return;
+    if (!ready && film && Number.isFinite(film.duration) && film.duration > 0) {
+      film.currentTime = ((performance.now() - start) / 1000) % film.duration;
+    }
     canvas.toggleAttribute('data-ready', ready);
     canvas.dispatchEvent(new Event('water-renderer-change'));
   }
 
   function resize() {
-    if (retired || !uniforms) return;
+    if (retired || !scene) return;
     const { width, height } = hero.getBoundingClientRect();
     if (width < 1 || height < 1) return;
 
@@ -62,21 +55,20 @@
     }
 
     // Match the CSS picture's centered object-fit: cover, including its mobile crop.
-    const sourceWidth = portrait.matches ? 733 : sceneWidth;
-    const sourceLeft = portrait.matches ? 820 : 0;
-    const scale = Math.max(width / sourceWidth, height / sceneHeight);
+    const sourceWidth = portrait.matches ? landscape.portraitWidth : landscape.width;
+    const sourceLeft = portrait.matches ? landscape.portraitLeft : 0;
+    const scale = Math.max(width / sourceWidth, height / landscape.height);
     const visibleWidth = width / scale;
     const visibleHeight = height / scale;
-    gl.uniform4f(uniforms.crop,
-      (sourceLeft + (sourceWidth - visibleWidth) / 2) / sceneWidth,
-      (1 - visibleHeight / sceneHeight) / 2,
-      visibleWidth / sceneWidth, visibleHeight / sceneHeight);
-    gl.uniform2f(uniforms.resolution, w, h);
+    crop[0] = (sourceLeft + (sourceWidth - visibleWidth) / 2) / landscape.width;
+    crop[1] = (1 - visibleHeight / landscape.height) * (portrait.matches ? 0.5 : 0.68);
+    crop[2] = visibleWidth / landscape.width;
+    crop[3] = visibleHeight / landscape.height;
   }
 
   function useFilm() {
     retired = true;
-    uniforms = null;
+    scene = null;
     cancelAnimationFrame(frame);
     frame = 0;
     showSurface(false);
@@ -89,11 +81,19 @@
     frame = requestAnimationFrame(draw);
     if (now + 0.5 < nextFrame) return;
     nextFrame = Math.max(now, nextFrame) + frameInterval;
-    gl.uniform1f(uniforms.time, (now - start) / 1000);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (gl.isContextLost()) return;
+    try {
+      scene.render(sceneStartTime + (now - start) / 1000, crop);
+    } catch {
+      // A GPU reset can invalidate the framebuffer before the loss event is
+      // delivered. Let the event handlers rebuild it when the context returns.
+      if (!gl.isContextLost()) useFilm();
+      return;
+    }
     if (!canvas.hasAttribute('data-ready')) {
-      if (gl.isContextLost()) return;
-      if (gl.getError() !== gl.NO_ERROR) { useFilm(); return; }
+      const error = gl.getError();
+      if (gl.isContextLost() || error === gl.CONTEXT_LOST_WEBGL) return;
+      if (error !== gl.NO_ERROR) { useFilm(); return; }
       showSurface(true);
     }
 
@@ -123,86 +123,21 @@
     sampleStart = 0;
     samples = 0;
     slowWindows = 0;
-    if (!retired && uniforms && onScreen && !document.hidden) frame = requestAnimationFrame(draw);
-  }
-
-  function loadImage(url) {
-    return new Promise((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error('Could not load ' + url));
-      image.src = url;
-    });
-  }
-
-  function uploadTexture(unit, image, sampler) {
-    gl.activeTexture(gl.TEXTURE0 + unit);
-    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    gl.uniform1i(sampler, unit);
+    if (!retired && scene && onScreen && !document.hidden) frame = requestAnimationFrame(draw);
   }
 
   async function initialize() {
     const attempt = ++generation;
-    if (retired) return;
+    const isCurrent = () => !retired && attempt === generation && !gl.isContextLost();
     try {
-      const precision = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
-      if (!precision?.precision || gl.getParameter(gl.MAX_TEXTURE_SIZE) < sceneWidth) {
-        useFilm();
-        return;
-      }
-      assets ??= Promise.all([
-        fetch('assets/river-scene/water.frag?v=1').then(response => {
-          if (!response.ok) throw new Error('Could not load the waterfall shader');
-          return response.text();
-        }),
-        loadImage('assets/river-scene/river-desktop.webp'),
-        loadImage('assets/river-scene/water-mask.png?v=1')
-      ]);
-      const [fragmentSource, scene, mask] = await assets;
-      if (attempt !== generation || gl.isContextLost()) return;
-
-      const program = gl.createProgram();
-      for (const [type, source] of [[gl.VERTEX_SHADER, vertexSource], [gl.FRAGMENT_SHADER, fragmentSource]]) {
-        const shader = gl.createShader(type);
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-        gl.attachShader(program, shader);
-        gl.deleteShader(shader);
-      }
-      gl.linkProgram(program);
-      const parallel = gl.getExtension('KHR_parallel_shader_compile');
-      while (parallel && !gl.getProgramParameter(program, parallel.COMPLETION_STATUS_KHR)) {
-        await new Promise(resolve => setTimeout(resolve, 25));
-        if (attempt !== generation || gl.isContextLost()) return;
-      }
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        const details = gl.getAttachedShaders(program).map(shader => gl.getShaderInfoLog(shader)).join(' ');
-        throw new Error(gl.getProgramInfoLog(program) + ' ' + details);
-      }
-      gl.useProgram(program);
-
-      // A single oversized triangle covers the viewport without an interior seam.
-      gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
-      const position = gl.getAttribLocation(program, 'aPosition');
-      gl.enableVertexAttribArray(position);
-      gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-      gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
-      const location = name => gl.getUniformLocation(program, name);
-      uploadTexture(0, scene, location('uScene'));
-      uploadTexture(1, mask, location('uMask'));
-      uniforms = { time: location('uTime'), crop: location('uCrop'), resolution: location('uResolution') };
+      const renderer = await createRiverScene(gl, isCurrent);
+      if (!renderer || !isCurrent()) return;
+      scene = renderer;
       resize();
       syncFrames();
     } catch (error) {
-      if (attempt !== generation || gl.isContextLost()) return;
-      console.warn('Waterfall film selected:', error.message);
+      if (!isCurrent()) return;
+      console.warn('River film selected:', error.message);
       useFilm();
     }
   }
@@ -220,7 +155,7 @@
     if (retired) return;
     event.preventDefault();
     generation++;
-    uniforms = null;
+    scene = null;
     syncFrames();
     showSurface(false);
   });

@@ -3,12 +3,25 @@
     "tool": "Built-in ImageGen",
     "files": [
       "river-desktop.webp",
-      "river-mobile.webp",
-      "river-desktop.mp4",
-      "river-mobile.mp4"
+      "river-mobile.webp"
     ],
     "prompt": "Use case: stylized-concept. Asset type: a single 2400x1280 cinematic ultra-wide 1.875:1 landscape environmental key art plate for a premium independent videogame studio's full-bleed homepage, no typography. Masterful, realistic game environment matte painting, impeccably composed like a big-budget title screen. A rugged coastal Pacific Northwest river valley in early autumn at the violet edge of blue hour. Camera just above moving water, looking upstream at an impressive stepped waterfall. The broad luminous silver-blue curtain and whitewater swimming with dark jade currents occupies the RIGHT and center-right (x=54%–93%, y=40%–74%), the brook and horizontal streaks of foam come forward to the bottom edge. Upper right shows layered pale atmospheric fir forests and a small break of blush-copper evening light through silver gray clouds. Upper left has steeply rising dark canyon forest, lower left has shadowy charcoal-green fir silhouettes and dark foreground basalt to naturally provide clear, calm negative space for overlay type. Strong composition, deliberate value grouping, atmospheric spatial depth, deep indigo shadows, textured wet mossy rock faces, opalescent white spray, luminous cold tonal whites, delicate silverlit ripples and a subtle warm tint behind the distant mountains. A beautiful fresh discoverable world, deep-toned and moody but with substantial luminous mist and daylight values on the right. The waterfall must have a convincing lip and landing pool for fish that will be added separately. Precision and material detail of premium environmental concept art with fine film grain. No people, fish or other animals, no manmade objects or trails, no buildings, no signs, no text, no labels, no interface elements, no borders.",
-    "delivery": "1717 × 916 landscape and 733 × 916 portrait WebP posters. Localized flow and refraction in the cascade, pool, and spray were rendered as 1440 × 768 and 640 × 800 H.264 video loops at 24 fps."
+    "delivery": "1717 × 916 landscape WebP and 733 × 916 portrait WebP cropped from landscape columns 820–1552."
+  },
+  "water": {
+    "files": ["water-mask.png", "water-dynamics.webp", "water.frag"],
+    "source": "tools/build_water_mask.py maps the ledges, pool and spray in river-desktop.webp. tools/bake_water_dynamics.py uses the pool mask as the bank boundary for a depth-averaged shallow-water simulation with waterfall inflow and transported foam.",
+    "delivery": "Lossless 1536 × 768 WebP atlas holding 64 frames of water height, two surface slopes and foam over eight seconds. water.frag traces the falling sheets and pool surface, adds capillary ripples and spray, and samples the moving environment for reflections."
+  },
+  "weather": {
+    "files": ["weather-mask.png", "cloud-noise.png", "weather.frag", "wind.glsl"],
+    "source": "tools/build_weather.py derives sky, canopy and valley mist masks from the landscape. A seeded generator combines tileable three-dimensional value and Worley noise, with a separate cloud coverage map derived from the sky artwork.",
+    "delivery": "weather.frag traces the moving cloud volume with sunlight attenuation, bends fir crowns in the wind and shades drifting valley mist."
+  },
+  "films": {
+    "files": ["river-desktop.mp4", "river-mobile.mp4"],
+    "source": "tools/render_river.py renders the landscape with river-scene.js and the live water and weather shaders, then encodes both crops with FFmpeg.",
+    "delivery": "16-second silent H.264 loops at 24 fps, 1600 × 854 for desktop and 720 × 900 for portrait. The separate waterfall.m4a supplies the ambience."
   },
   "share_preview": {
     "file": "studio-preview.jpg",

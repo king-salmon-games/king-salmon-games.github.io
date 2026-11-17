@@ -66,9 +66,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .menu-toggle .icon-close, .menu-toggle[aria-expanded="true"] .icon-menu { display: none; }
 .menu-toggle[aria-expanded="true"] .icon-close { display: block; }
 
-.river-hero { position: relative; isolation: isolate; overflow: hidden; background: #152026; height: clamp(482px, 63.8svh, 766px); }
+.river-hero { position: relative; isolation: isolate; overflow: hidden; background: #152026; height: clamp(500px, 68svh, 820px); }
 .scene-poster, .scene-poster img, [data-river-water], [data-water-surface], .scene-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
-.scene-poster img, [data-river-water] { object-fit: cover; object-position: center; }
+.scene-poster img, [data-river-water] { object-fit: cover; object-position: 50% 32%; }
 .scene-poster { z-index: -5; }
 [data-river-water] { z-index: -4; pointer-events: none; }
 [data-water-surface] { z-index: -3; opacity: 0; pointer-events: none; }
@@ -157,6 +157,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .primary-nav { gap: 21px; }
 }
 @media (max-width: 680px) {
+  .scene-poster img, [data-river-water] { object-position: center; }
   :root { --gutter: clamp(18px,5vw,32px); }
   .river-hero { height: clamp(500px,calc(73svh - 36px),699px); }
   .scene-shade { background: linear-gradient(0deg,#081012ed 0%,#081012b8 24%,#08101255 43%,transparent 62%),linear-gradient(90deg,#07101440,transparent 75%); }

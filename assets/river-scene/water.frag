@@ -3,17 +3,21 @@ precision highp float;
 varying vec2 vUv;
 uniform sampler2D uScene;
 uniform sampler2D uMask;
+uniform sampler2D uDynamics;
+uniform sampler2D uWeather;
 uniform vec4 uCrop;
 uniform vec2 uResolution;
 uniform float uTime;
 
 const vec2 plateSize = vec2(1717.0, 916.0);
-const vec3 frothColor = vec3(0.79, 0.89, 0.94);
+const float gravity = 9.81;
+const float tau = 6.2831853;
+const vec3 luminance = vec3(0.2126, 0.7152, 0.0722);
 
 float hash(vec2 p) {
-    vec3 n = fract(p.xyx * vec3(0.1031, 0.1030, 0.0973));
-    n += dot(n, n.yxz + 33.33);
-    return fract((n.x + n.y) * n.z);
+    vec3 h = fract(p.xyx * vec3(.1031, .1030, .0973));
+    h += dot(h, h.yxz + 33.33);
+    return fract((h.x + h.y) * h.z);
 }
 
 float noise(vec2 p) {
@@ -24,161 +28,285 @@ float noise(vec2 p) {
                mix(hash(cell + vec2(0.0, 1.0)), hash(cell + 1.0), f.x), f.y);
 }
 
-// x and y lie across and along a sheet. z is its local surface normal.
-// Falling curtains have deep longitudinal folds; the pool has transverse waves.
-struct Waves {
-    vec3 kx;
-    vec3 ky;
-    vec3 phase;
-    vec3 amplitude;
-};
+#include "wind.glsl"
 
-Waves waveField(float pool, vec2 coords) {
-    Waves w = Waves(
-        mix(vec3(7.7, 13.1, -3.5), vec3(1.7, -2.6, 4.3), pool),
-        mix(vec3(1.9, 3.3, 6.1), vec3(5.3, 9.7, 13.7), pool),
-        uTime * mix(vec3(-0.46, -0.81, -3.7), vec3(-2.0, -3.65, -5.4), pool),
-        mix(vec3(0.033, 0.013, 0.024), vec3(0.043, 0.021, 0.012), pool)
-    );
-    // A third wave radiates away from the foot of the main cascade. Linearize
-    // its expanding, elliptical front within this ray's short tracing interval.
-    const vec2 impact = vec2(0.34, -0.23);
-    vec2 radial = (coords - impact) * vec2(0.73, 1.0);
-    vec2 k = 10.3 * vec2(0.73, 1.0) * radial / max(length(radial), 0.045);
-    w.kx.z = mix(w.kx.z, k.x, pool);
-    w.ky.z = mix(w.ky.z, k.y, pool);
-    w.phase.z -= pool * dot(k, impact);
-    return w;
+vec2 uvOffset(vec2 pixels) {
+    return pixels * vec2(1.0, -1.0) / plateSize;
 }
 
-const vec3 bend = vec3(0.92, -0.65, 1.26);
-const vec2 bendDirection = vec2(1.37, 1.06);
-
-vec3 wavePhases(vec2 p, Waves w) {
-    float curl = sin(dot(p, bendDirection) - uTime * 0.48);
-    return w.kx * p.x + w.ky * p.y + w.phase + bend * curl;
+vec3 environment(vec2 uv) {
+    vec2 lookup = clamp(uv, .001, .999);
+    vec4 weather = texture2D(uWeather, lookup);
+    return mix(texture2D(uScene, lookup).rgb, weather.rgb, weather.a);
 }
 
-float waterDistance(vec3 p, Waves w) {
-    float height = dot(sin(wavePhases(p.xy, w)), w.amplitude);
-    // Signed slab field with half-thickness 0.018. The scale bounds distance
-    // conservatively after bending, keeping a march step outside the front face.
-    return (abs(p.z - height) - 0.018) * 0.75;
+vec3 wetSample(vec2 uv, vec2 offset, vec2 material, vec3 fallback) {
+    vec2 src = uv + uvOffset(offset);
+    float coverage = dot(texture2D(uMask, src).rg, material);
+    return mix(fallback, texture2D(uScene, src).rgb, smoothstep(.015, .34, coverage));
 }
 
-// Analytic normal of the field's upper zero surface. Include the derivative of
-// the coordinate bend so reflected light follows the curling geometry.
-vec3 surfaceNormal(vec2 p, Waves w, vec3 phases) {
-    vec3 slope = w.amplitude * cos(phases);
-    float bendSlope = cos(dot(p, bendDirection) - uTime * 0.48) * dot(slope, bend);
-    vec2 gradient = vec2(dot(slope, w.kx), dot(slope, w.ky)) + bendDirection * bendSlope;
-    return normalize(vec3(-gradient, 1.0));
+// Sample the high frequency structure of a real patch of broken water in the
+// source artwork in parcel coordinates. Mirrored edges are continuous. Two
+// scales sample separate patches with different orientations and travel speeds.
+float whitewaterDetail(vec2 parcel, float disorder) {
+    vec2 a = abs(fract(parcel * vec2(.36, 1.38) + vec2(disorder*.13, parcel.x*.037))*2.0-1.0);
+    vec2 b = abs(fract(parcel * vec2(.87, 2.71) + vec2(disorder*.24, -.13*parcel.x))*2.0-1.0);
+    vec2 uv1 = vec2(0.0, 1.0) + uvOffset(vec2(1270.0,410.0) + a * vec2(80.0,92.0));
+    vec2 uv2 = vec2(0.0, 1.0) + uvOffset(vec2(1426.0,409.0) + b * vec2(47.0,75.0));
+    return dot(texture2D(uScene,uv1).rgb,luminance) - .66
+         + .47*(dot(texture2D(uScene,uv2).rgb,luminance) - .65);
 }
 
-vec2 plateUv(vec2 pixelOffset) {
-    return pixelOffset * vec2(1.0, -1.0) / plateSize;
+// Top edges of the main shelf and its three lower lateral ledges, in plate pixels.
+float ledge(float x, float tier) {
+    if (tier > 2.5) return 570.0 + .16*(x-743.0) + .00055*(x-765.0)*(x-765.0);
+    if (tier > 1.5) return 487.0 - .14*(x-785.0);
+    if (tier > .5) return 409.0 - .07*(x-868.0);
+    float right = max(x-1155.0,0.0);
+    return 370.0 - .068*(x-1150.0) - .00017*right*right
+           + 3.9*sin((x-1060.0)*.023);
 }
 
-// Hand-traced banks and rock islands gate both the receiver and the texture
-// source, so water doesn't pull a neighboring slab of dark basalt downstream.
-vec3 flowSample(vec2 uv, vec2 offset, float pool, vec3 base) {
-    vec2 source = uv + plateUv(offset);
-    vec2 material = texture2D(uMask, source).rg;
-    float wet = mix(material.r, material.g, pool);
-    return mix(base, texture2D(uScene, source).rgb, smoothstep(0.006, 0.32, wet));
+// The gravity jet's launch time labels parcels along a streamline. A feature
+// born at time T reaches the pixel at T+flight. Unlike scrolling a photograph,
+// its apparent speed and longitudinal stretching rise continuously as it drops.
+vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
+    float tier = 0.0;
+    if (px.x < 995.0 && px.y > 568.0) tier = 3.0;
+    else if (px.x < 975.0 && px.y > 464.0) tier = 2.0;
+    else if (px.x < 947.0) tier = 1.0;
+    float metresPerPixel = .0165;
+    float lateral = mix(-1.34, .64, step(2.5,tier));
+    lateral *= .88+.23*noise(vec2(px.x*.009,4.0));
+    float entry = .62;
+    float rootX = px.x;
+    float flight = 0.0;
+    for (int i=0; i<3; ++i) {
+        float drop = max(0.0,px.y-ledge(rootX,tier))*metresPerPixel;
+        flight = (sqrt(entry*entry + 2.0*gravity*drop) - entry)/gravity;
+        rootX = px.x - lateral*flight/metresPerPixel;
+    }
+    float speed = max(1.35, length(vec2(lateral, entry+gravity*flight)));
+    float lane = rootX*metresPerPixel;
+    vec2 parcel = vec2(lane, flight - uTime);
+    float braid = noise(parcel*vec2(1.15,1.82));
+    float breakup = smoothstep(.28,.96,flight);
+    parcel.x += (.105+.16*breakup)*(braid-.5) + .035*sin(lane*1.12 + parcel.y*4.2);
+    parcel.x -= breakup*gust*.085;
+    float folds = noise(vec2(parcel.x*6.5, parcel.y*3.8 + 1.25*braid));
+    float aeration = smoothstep(.02,.95,flight+.25*braid);
+    // q=v*h conserves the flux of a ribbon as gravity thins it.
+    float flux = .038+.064*noise(vec2(lane*2.9,.7));
+    float halfThickness = .5*flux/speed;
+    vec2 sheet = vec2(parcel.x, parcel.y*1.6);
+    vec3 kx = vec3(6.8,15.4,-23.8);
+    vec3 ky = vec3(2.8,-4.0,6.3);
+    vec3 amplitude = vec3(.031,.012,.0058) * (.79+.42*braid);
+    vec3 bend = vec3(.87,-1.3,.64)*sin(lane*1.53+parcel.y*2.05) + folds*.66;
+    vec3 ray = normalize(vec3(.21,.24,-1.0));
+    vec3 point = vec3(sheet-ray.xy*(.15/-ray.z),.15);
+    // Conservative signed distance to the two faces of the folded, thinning
+    // liquid ribbon. Its upper zero crossing sets parallax and the optical path.
+    for (int i=0; i<5; ++i) {
+        vec3 phase = kx*point.x+ky*point.y+bend;
+        float height = dot(amplitude,sin(phase));
+        float distanceToSheet = (abs(point.z-height)-halfThickness)*.73;
+        point += ray*distanceToSheet;
+    }
+    vec3 derivative = amplitude*cos(kx*point.x+ky*point.y+bend);
+    vec2 slope = vec2(dot(derivative,kx), dot(derivative,ky)*1.6/speed);
+    vec3 N = normalize(vec3(-slope,1.0));
+    vec2 parallax = (point.xy-sheet)/metresPerPixel;
+    // Air shear shreds the sheet into shorter clusters nearer the plunge pool.
+    // Their material coordinates continue to fall with the parent jet.
+    float clusters = noise(vec2(parcel.x*4.6+.72*braid,parcel.y*10.2+.63*folds));
+    float grains = whitewaterDetail(parcel,folds+.31*breakup*clusters);
+    grains = mix(grains, .58*grains+.11*(clusters-.5), breakup);
+    float chop = smoothstep(.42,.80,folds+.47*grains);
+    vec2 offset = parallax+N.xy*vec2(6.2,3.2)+vec2((braid-.5)*3.2, (folds-.5)*3.0);
+    vec3 refracted = wetSample(uv,offset,vec2(1,0),base);
+    // Remove stationary fine foam from the key art. Retain its broad lighting
+    // and channels; the detailed whitewater travelling through them is formed above.
+    vec2 axis = normalize(vec2(lateral,entry+gravity*flight));
+    vec2 across = vec2(axis.y,-axis.x);
+    vec3 local = .29*refracted
+        + .25*wetSample(uv,offset+axis*10.7+across*3.6,vec2(1,0),base)
+        + .23*wetSample(uv,offset-axis*10.1+across*2.8,vec2(1,0),base)
+        + .23*wetSample(uv,offset-axis*1.7-across*7.3,vec2(1,0),base);
+    float ln = dot(local,luminance);
+    float light = dot(N,normalize(vec3(.68,-.28,.70)));
+    float bubbles = clamp(.18+.35*aeration+.31*(folds-.5)+.94*grains,0.0,1.0);
+    // Beer-Lambert extinction in a bubble-laden sheet. Dense breaking ribbons
+    // scatter the sky; thinner filaments transmit the shadow of the basalt.
+    float path = (2.0*halfThickness+.025)/max(.28,dot(N,-ray));
+    float scatter = 1.0-exp(-path*(8.0+25.0*bubbles));
+    vec3 diffuse = local*(.88+.19*light);
+    vec3 clouded = vec3(.66,.81,.91)*(.44+.69*ln+.14*chop);
+    diffuse = mix(diffuse,clouded,scatter*(.24+.22*aeration));
+    float contrast = .88*grains+.09*(folds-.50)+.052*(braid-.5);
+    diffuse += vec3(.84,.93,1.0)*contrast*(.46+.52*ln);
+    float fresnel = .0204+.9796*pow(1.0-max(0.0,dot(N,-ray)),5.0);
+    vec3 sky = environment(vec2(uv.x+N.x*.095,.85+N.y*.095));
+    return mix(diffuse,sky,fresnel*(.67-.27*bubbles));
+}
+
+vec4 dynamicsTile(vec2 local, float frame) {
+    vec2 cell = vec2(mod(frame,8.0),7.0-floor(frame/8.0));
+    vec2 st = (vec2(.5)+vec2(local.x,1.0-local.y)*vec2(191.0,95.0))/vec2(192.0,96.0);
+    return texture2D(uDynamics,(cell+st)*.125);
+}
+
+vec2 poolToPixel(vec2 world) {
+    float s = (.55*world.y)/max(7.2-.45*world.y,.2);
+    return vec2(1100.0+world.x*(58.0+50.0*s),672.0+244.0*s);
+}
+
+vec4 poolState(vec2 world, float frame) {
+    vec2 local = clamp((poolToPixel(world)-vec2(480.0,672.0))/vec2(1237.0,244.0),0.0,1.0);
+    float a = floor(frame);
+    vec4 state = mix(dynamicsTile(local,a),dynamicsTile(local,mod(a+1.0,64.0)),fract(frame));
+    return vec4((state.r-.5)*.5,(state.gb-.5)*1.2,clamp((state.a-.5)*2.0,0.0,1.0));
+}
+
+// Gravity-capillary dispersion for the short ripples below the fluid grid.
+// World x is right and y downstream, in metres; z is height above equilibrium.
+vec3 capillary(vec2 p, float gust) {
+    vec3 kx=vec3(16.0,-24.0,43.0);
+    vec3 ky=vec3(20.0,32.0,36.0);
+    vec3 k=sqrt(kx*kx+ky*ky);
+    vec3 omega=sqrt(gravity*k+.000073*k*k*k);
+    vec2 current=vec2(.21,.49);
+    float run = sin(p.x*.83+p.y*.95-uTime*.88);
+    vec3 phase=kx*(p.x-current.x*uTime)+ky*(p.y-current.y*uTime)-omega*uTime
+              +vec3(1.6,-1.13,1.22)*run;
+    vec3 a = vec3(.0034,.0017,.0011)*(.74+.53*gust);
+    vec3 ca = a*cos(phase);
+    return vec3(dot(a,sin(phase)),dot(ca,kx),dot(ca,ky));
+}
+
+vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
+    float s=clamp((px.y-672.0)/244.0,0.0,1.0);
+    vec2 target=vec2((px.x-1100.0)/(58.0+50.0*s),7.2*s/(.55+.45*s));
+    float frame=mod(uTime*8.0,64.0);
+    // Trace the upper face of the simulated water column. Its signed vertical
+    // residual divided by the slope norm is the local tangent distance. The
+    // directional derivative intersects the grazing ray with that tangent.
+    vec3 ray=normalize(vec3(.035,-.79,-mix(.43,.70,s)));
+    vec3 point=vec3(target,0.0);
+    for (int i=0;i<3;++i) {
+        vec4 sim=poolState(point.xy,frame);
+        vec3 ripple=capillary(point.xy,gust);
+        vec3 n=normalize(vec3(-sim.gb-ripple.yz,1.0));
+        float distanceToSurface=(point.z-sim.r-ripple.x)*n.z;
+        point+=ray*clamp(distanceToSurface/max(.21,-dot(n,ray)),-.13,.13);
+    }
+    vec4 sim=poolState(point.xy,frame);
+    vec3 ripple=capillary(point.xy,gust);
+    vec2 gradient=sim.gb+ripple.yz;
+    vec3 N=normalize(vec3(-gradient,1.0));
+    vec3 view=-ray;
+    vec3 reflected=reflect(ray,N);
+    float face=clamp(dot(view,N),0.0,1.0);
+    // Refract the ray at an air/freshwater interface. The finite depth of the
+    // optically active surface layer bounds displacement on the scene plate.
+    vec3 transmitted=refract(ray,N,1.0/1.333);
+    vec3 flatT=refract(ray,vec3(0,0,1),1.0/1.333);
+    float depth=.18+.11*s;
+    vec2 bent=(transmitted.xy/max(.30,-transmitted.z)-flatT.xy/-flatT.z)*depth;
+    vec2 offset=poolToPixel(point.xy+bent)-px;
+    vec3 refracted=wetSample(uv,offset,vec2(0,1),base);
+    vec3 local=.59*refracted
+        +.225*wetSample(uv,offset+vec2(5.3,2.3),vec2(0,1),base)
+        +.185*wetSample(uv,offset-vec2(4.7,2.6),vec2(0,1),base);
+    float fresnel=.0204+.9796*pow(1.0-face,5.0);
+    vec2 skyUv=vec2(uv.x+.18*reflected.x,.615+.38*clamp(reflected.z,0.,1.));
+    vec3 sky=environment(skyUv);
+    vec3 water=mix(local,sky,fresnel*.79);
+    vec3 halfVector=normalize(view+normalize(vec3(.68,-.65,.37)));
+    float glint=pow(max(dot(N,halfVector),0.0),42.0);
+    water+=vec3(.98,.77,.61)*glint*(.045+.075*gust);
+    water*=1.0+.16*clamp(dot(gradient,vec2(-.55,-.85)),-.65,.65);
+    // Advected whitecaps from the simulation break into lace and bubbles as
+    // they travel around the rock banks. Keep their edge roughness sub-crest.
+    vec2 patch=point.xy-vec2(.13,.55)*uTime;
+    float breakup=noise(patch*5.6+vec2(.22*sin(point.y*1.45),.11*cos(point.x*.92)));
+    float granules=whitewaterDetail(vec2(patch.x*1.4,patch.y*.68),breakup);
+    float foam=smoothstep(.18,.80,sim.a*(.81+.45*breakup)+granules*.65);
+    vec3 froth=mix(vec3(.56,.69,.73),vec3(.80,.85,.86),clamp(.52+.34*breakup+granules*.65,0.,1.));
+    water=mix(water,froth,min(.77,foam));
+    return water;
+}
+
+float impactLine(float x) {
+    return 689.0-.00078*pow(max(x-1200.0,0.0),2.0)+3.8*sin(.016*x);
+}
+
+float flyingDrops(vec2 px, float gust) {
+    float pitch=11.5;
+    float column=floor(px.x/pitch);
+    float light=0.0;
+    for (int j=-1;j<=1;++j) {
+        float id=column+float(j);
+        float seed=hash(vec2(id,5.0));
+        float emission=uTime*.91+seed;
+        float pulse=floor(emission);
+        float age=fract(emission)/.91;
+        float roll=hash(vec2(id,pulse));
+        float x0=(id+.15+.70*roll)*pitch;
+        float up=135.0+132.0*hash(vec2(id+8.0,pulse));
+        float gravityPx=476.0;
+        float vx=(seed-.45)*17.0+gust*9.0;
+        vec2 center=vec2(x0+vx*age,impactLine(x0)-up*age+.5*gravityPx*age*age);
+        vec2 velocity=vec2(vx,gravityPx*age-up);
+        vec2 offset=px-center;
+        // Capsule SDF integrated over a short shutter, anti-aliased in plate pixels.
+        vec2 exposure=velocity/85.0;
+        float along=clamp(dot(offset,exposure)/max(.001,dot(exposure,exposure)),-.5,.5);
+        float radius=mix(.48,1.08,roll);
+        float d=length(offset-exposure*along)-radius;
+        float aa=max(.5,.55*uCrop.w*plateSize.y/uResolution.y);
+        light+= (.14+.21*roll)*(1.0-smoothstep(-aa,aa,d))
+              * smoothstep(0.0,.07,age)*(1.0-smoothstep(1.6*up/gravityPx,2.0*up/gravityPx,age));
+    }
+    return min(light,.44);
+}
+
+vec3 spray(vec2 px, vec2 uv, vec3 underlying, float gust) {
+    float height=max(0.0,impactLine(px.x)-px.y);
+    // Lift an entrained parcel through the spray cloud before drag and wind
+    // disperse it. Fine droplets travel ballistically near the foot of the falls.
+    float age=height/(31.0+.13*height);
+    vec2 air=vec2(px.x*.011-(.17+.15*gust)*age,age*.64-uTime*.81);
+    float coarse=noise(air);
+    float fine=noise(2.93*air+vec2(coarse,-coarse*.62));
+    float density=smoothstep(.24,.83,.66*coarse+.34*fine);
+    vec3 scattered=environment(vec2(uv.x,.86));
+    vec3 mistLight=mix(vec3(.74,.84,.91),scattered,.18);
+    float droplets=flyingDrops(px,gust);
+    float opacity=.06+.31*density+.12*droplets;
+    return mix(underlying,mistLight,opacity)+droplets*vec3(.27,.33,.37);
 }
 
 void main() {
-    vec2 uv = uCrop.xy + vUv * uCrop.zw;
-    vec3 mask = texture2D(uMask, uv).rgb;
-    float coverage = max(max(mask.r, mask.g), mask.b);
-    if (coverage < 0.004) {
-        gl_FragColor = vec4(0.0);
-        return;
+    vec2 uv=uCrop.xy+vUv*uCrop.zw;
+    vec3 mask=texture2D(uMask,uv).rgb;
+    float coverage=max(mask.r,max(mask.g,mask.b));
+    if (coverage<.004) { gl_FragColor=vec4(0.0); return; }
+    vec2 px=vec2(uv.x,1.0-uv.y)*plateSize;
+    vec3 base=texture2D(uScene,uv).rgb;
+    float gust=valleyWind(uv,uTime).x;
+    vec3 water=base;
+    if (mask.r>.01) water=fallingWater(px,uv,base,gust);
+    if (mask.g>.01) {
+        vec3 pool=riverPool(px,uv,base,gust);
+        water=mix(water,pool,mask.g/max(.001,mask.r+mask.g));
     }
-
-    vec3 base = texture2D(uScene, uv).rgb;
-    // Map the foreground into receding perspective. Distant crests converge
-    // near the impact pool and spread apart as the brook approaches the camera.
-    vec2 pixel = vec2(uv.x, 1.0 - uv.y) * plateSize;
-    vec2 p = pixel * 0.01;
-    float pool = smoothstep(-0.10, 0.10, mask.g - mask.r);
-    float nearBank = max(p.y - 6.84, 0.0);
-    vec2 poolCoords = vec2((p.x - 11.6) / (0.92 + 0.39 * nearBank),
-                            nearBank * 2.55 / (0.62 + 0.42 * nearBank));
-    vec2 sheetCoords = mix(p, poolCoords, pool);
-
-    Waves waves = waveField(pool, sheetCoords);
-    vec3 ray = normalize(mix(vec3(0.14, 0.20, -1.0), vec3(-0.12, 0.78, -0.88), pool));
-    vec3 point = vec3(sheetCoords, 0.23);
-    // Trace an oblique viewing ray through the finite-thickness sheet. Both
-    // the displaced intersection and its normal drive the material below.
-    for (int i = 0; i < 6; ++i) {
-        point += ray * waterDistance(point, waves);
+    float wet=max(mask.r,mask.g);
+    water=mix(base,water,clamp(wet/coverage,0.,1.));
+    if (mask.b>.012) {
+        vec3 mist=spray(px,uv,water,gust);
+        water=mix(water,mist,mask.b/coverage);
     }
-    vec3 phases = wavePhases(point.xy, waves);
-    vec3 normal = surfaceNormal(point.xy, waves, phases);
-    vec2 rayShift = (point.xy - sheetCoords) - ray.xy * (0.212 / -ray.z);
-
-    float lane = noise(vec2(p.x * 1.6 + p.y * 0.31, p.y * 0.48));
-    // The brook falls right over the small near ledge and left over the upper tiers.
-    float fallSlant = mix(13.0, -16.0, smoothstep(8.9, 11.4, p.x));
-    vec2 curtainFlow = vec2(fallSlant + 9.0 * (lane - 0.5),
-                             53.0 + 20.0 * lane + max(p.y - 3.3, 0.0) * 5.4);
-    vec2 streamFlow = vec2(-12.0 + 23.0 * sin(p.x * 0.36 + lane * 2.5),
-                             10.0 + nearBank * 11.5);
-    streamFlow.x += clamp(p.x - 11.8, -1.0, 1.0) * 12.0 / (1.0 + 2.0 * nearBank);
-    vec2 flow = mix(curtainFlow, streamFlow, pool);
-    // Pin the entry and exit of each sheet. Otherwise a moving copy of the
-    // bright crest at the lip creates a second ledge inside the curtain.
-    vec2 along = plateUv(flow * 0.63);
-    vec2 room = min(texture2D(uMask, uv - along).rg, texture2D(uMask, uv + along).rg);
-    float freedom = mix(0.055, 1.0, smoothstep(0.04, 0.80, mix(room.r, room.g, pool)));
-    flow *= freedom;
-    vec2 refraction = normal.xy * mix(vec2(4.5, 6.0), vec2(5.8, 4.2), pool)
-                      + rayShift * mix(42.0, 35.0, pool);
-    refraction *= mix(0.24, 1.0, freedom);
-    float phase = fract(uTime * mix(0.92, 0.67, pool) + lane * 0.69);
-    float secondPhase = fract(phase + 0.5);
-    float blend = 1.0 - abs(phase * 2.0 - 1.0);
-    blend = blend * blend * (3.0 - 2.0 * blend);
-    vec3 a = flowSample(uv, refraction - flow * (phase - 0.5), pool, base);
-    vec3 b = flowSample(uv, refraction - flow * (secondPhase - 0.5), pool, base);
-    vec3 water = mix(b, a, blend);
-
-    // Silver-blue sky in the film of water, with warmer light to the right.
-    vec3 light = normalize(vec3(0.46, -0.62, 0.71));
-    float lightChange = dot(normal, light) - light.z;
-    float fresnel = pow(1.0 - clamp(dot(normal, -ray), 0.0, 1.0), 2.5);
-    vec2 skyUv = clamp(vec2(uv.x + normal.x * 0.09, 0.86 + normal.y * 0.13), 0.01, 0.99);
-    vec3 sky = texture2D(uScene, skyUv).rgb;
-    water *= 1.0 + lightChange * mix(0.27, 0.33, pool);
-    water = mix(water, sky, fresnel * mix(0.16, 0.37, pool));
-    float glint = pow(max(dot(normal, normalize(light - ray)), 0.0), 26.0);
-    water += vec3(0.79, 0.87, 0.92) * glint * mix(0.044, 0.075, pool);
-
-    // Foam collects on high curvature crests, then twists into fine strands.
-    // Vary the strand threshold spatially so the crests break into patches.
-    float crest = dot(sin(phases), vec3(0.45, 0.33, 0.22));
-    float turbulence = noise(sheetCoords * vec2(3.2, 2.5) - vec2(0.12, 0.59) * uTime);
-    float filament = sin(phases.y + sin(phases.x) * 1.25 + turbulence * 4.0);
-    float lineWidth = clamp(uCrop.w * plateSize.y / uResolution.y * 0.05, 0.055, 0.17);
-    float strand = 1.0 - smoothstep(lineWidth, lineWidth + 0.21, abs(filament));
-    float foam = strand * smoothstep(0.07, 0.58, crest) * smoothstep(0.26, 0.68, turbulence);
-    water = mix(water, frothColor, foam * mix(0.16, 0.30, pool));
-
-    float wet = max(mask.r, mask.g);
-    vec3 color = mix(base, water, clamp(wet / coverage, 0.0, 1.0));
-    if (mask.b > 0.014) {
-        // Two scales of spray move upward from the impact. Refracting the
-        // underlying highlights preserves the shape and depth of the mist plume.
-        float billow = noise(p * 2.3 + vec2(-0.16, 0.84) * uTime);
-        float wisp = noise(p * 5.7 + vec2(0.21, 1.45) * uTime + billow);
-        vec2 drift = vec2(billow - 0.5, wisp - 0.5) * 6.0;
-        vec3 mist = texture2D(uScene, uv + plateUv(drift)).rgb;
-        float air = smoothstep(0.27, 0.82, billow * 0.66 + wisp * 0.34);
-        mist = mix(mist, frothColor, 0.25 * air);
-        color = mix(color, mist, clamp(mask.b / coverage, 0.0, 1.0) * (0.24 + 0.45 * air));
-    }
-    gl_FragColor = vec4(color, smoothstep(0.002, 0.94, coverage));
+    gl_FragColor=vec4(water,smoothstep(.003,.94,coverage));
 }
