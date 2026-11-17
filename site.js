@@ -118,6 +118,11 @@
   function onGesture(event) {
     if (event.isTrusted) startWaterfall();
   }
+  // Some decoders pause during the seek back to the opening frame of a loop.
+  water.addEventListener('seeked', () => {
+    if (water.loop && water.paused && water.currentTime < 0.1 && !document.hidden &&
+        !surface?.hasAttribute('data-ready')) startWaterfall();
+  });
   // Some browsers select a video source before the mobile viewport settles.
   const mobileSource = water.querySelector('source[media]');
   const desktopSource = water.querySelector('source:not([media])');
