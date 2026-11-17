@@ -1,20 +1,18 @@
-import { createRiverScene, landscape, openSceneContext, sceneStartTime } from './river-scene.js?v=2';
-
-(() => {
-  const canvas = document.querySelector('[data-water-surface]');
-  if (!canvas) return;
-
+async function startLiveScene(canvas) {
   const hero = canvas.closest('.river-hero');
   const film = hero.querySelector('[data-river-water]');
   const portrait = window.matchMedia('(max-width: 680px)');
+  let engine;
   let gl;
   try {
-    gl = openSceneContext(canvas);
+    engine = await import('./river-scene.js?v=2');
+    gl = engine.openSceneContext(canvas);
   } catch {
-    // Browser privacy settings can prevent context creation.
+    // The film also covers module loading failures and blocked GPU contexts.
     return;
   }
   if (!gl) return;
+  const { createRiverScene, landscape, sceneStartTime } = engine;
 
   const frameInterval = 1000 / 30;
   const crop = new Float32Array(4);
@@ -28,21 +26,27 @@ import { createRiverScene, landscape, openSceneContext, sceneStartTime } from '.
   let sampleStart = 0;
   let samples = 0;
   let slowWindows = 0;
-  const start = performance.now();
+  let needsResize = true;
+  let previousDraw = null;
+  let sceneTime = sceneStartTime;
 
   function showSurface(ready) {
     if (canvas.hasAttribute('data-ready') === ready) return;
     if (!ready && film && Number.isFinite(film.duration) && film.duration > 0) {
-      film.currentTime = ((performance.now() - start) / 1000) % film.duration;
+      film.currentTime = (sceneTime - sceneStartTime) % film.duration;
     }
     canvas.toggleAttribute('data-ready', ready);
     canvas.dispatchEvent(new Event('water-renderer-change'));
   }
 
+  function requestResize() {
+    needsResize = true;
+  }
+
   function resize() {
-    if (retired || !scene) return;
     const { width, height } = hero.getBoundingClientRect();
     if (width < 1 || height < 1) return;
+    needsResize = false;
 
     const pixelBudget = portrait.matches ? 480000 : 980000;
     const density = Math.min(window.devicePixelRatio || 1, 1.6, Math.sqrt(pixelBudget / (width * height)));
@@ -79,11 +83,23 @@ import { createRiverScene, landscape, openSceneContext, sceneStartTime } from '.
 
   function draw(now) {
     frame = requestAnimationFrame(draw);
+    if (!nextFrame) nextFrame = now;
     if (now + 0.5 < nextFrame) return;
-    nextFrame = Math.max(now, nextFrame) + frameInterval;
+    nextFrame += (1 + Math.floor((now + 0.5 - nextFrame) / frameInterval)) * frameInterval;
     if (gl.isContextLost()) return;
+    if (!canvas.hasAttribute('data-ready')) {
+      // Start at the frame the visitor can see, even after a slow startup.
+      sceneTime = sceneStartTime + (film.readyState >= 2 && !film.seeking ? film.currentTime : 0);
+    } else if (previousDraw !== null) {
+      // A stalled browser should resume the wind without skipping through it.
+      sceneTime += Math.min(now - previousDraw, 2 * frameInterval) / 1000;
+    }
+    previousDraw = now;
     try {
-      scene.render(sceneStartTime + (now - start) / 1000, crop);
+      // Resizing clears the drawing buffer. Change it only inside a draw and
+      // submit the entire opaque landscape before returning to the compositor.
+      if (needsResize) resize();
+      scene.render(sceneTime, crop, true);
     } catch {
       // A GPU reset can invalidate the framebuffer before the loss event is
       // delivered. Let the event handlers rebuild it when the context returns.
@@ -110,7 +126,7 @@ import { createRiverScene, landscape, openSceneContext, sceneStartTime } from '.
     slowWindows = 0;
     if (quality > 0.56) {
       quality = Math.max(0.55, quality * 0.74);
-      resize();
+      requestResize();
     } else {
       useFilm();
     }
@@ -120,6 +136,7 @@ import { createRiverScene, landscape, openSceneContext, sceneStartTime } from '.
     cancelAnimationFrame(frame);
     frame = 0;
     nextFrame = 0;
+    previousDraw = null;
     sampleStart = 0;
     samples = 0;
     slowWindows = 0;
@@ -133,7 +150,7 @@ import { createRiverScene, landscape, openSceneContext, sceneStartTime } from '.
       const renderer = await createRiverScene(gl, isCurrent);
       if (!renderer || !isCurrent()) return;
       scene = renderer;
-      resize();
+      requestResize();
       syncFrames();
     } catch (error) {
       if (!isCurrent()) return;
@@ -142,7 +159,7 @@ import { createRiverScene, landscape, openSceneContext, sceneStartTime } from '.
     }
   }
 
-  const resizeObserver = new ResizeObserver(resize);
+  const resizeObserver = new ResizeObserver(requestResize);
   resizeObserver.observe(hero);
   const visibilityObserver = new IntersectionObserver(([entry]) => {
     onScreen = entry.isIntersecting;
@@ -150,7 +167,7 @@ import { createRiverScene, landscape, openSceneContext, sceneStartTime } from '.
   });
   visibilityObserver.observe(hero);
   document.addEventListener('visibilitychange', syncFrames);
-  portrait.addEventListener('change', resize);
+  portrait.addEventListener('change', requestResize);
   canvas.addEventListener('webglcontextlost', event => {
     if (retired) return;
     event.preventDefault();
@@ -161,4 +178,16 @@ import { createRiverScene, landscape, openSceneContext, sceneStartTime } from '.
   });
   canvas.addEventListener('webglcontextrestored', initialize);
   initialize();
-})();
+}
+
+const canvas = document.querySelector('[data-water-surface]');
+if (canvas) {
+  const film = canvas.closest('.river-hero').querySelector('[data-river-water]');
+  // On a touch-first screen the decoder presents the authored scene on its own
+  // clock throughout a gesture, including while a finger is held on the glass.
+  if (matchMedia('(pointer: coarse)').matches && !film.error && !film.hasAttribute('data-needs-renderer')) {
+    film.addEventListener('river-video-unavailable', () => startLiveScene(canvas), { once: true });
+  } else {
+    startLiveScene(canvas);
+  }
+}

@@ -70,9 +70,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .scene-poster, .scene-poster img, [data-river-water], [data-water-surface] { position: absolute; inset: 0; width: 100%; height: 100%; }
 .scene-poster img, [data-river-water] { object-fit: cover; object-position: 50% 32%; }
 .scene-poster { z-index: -5; }
+.js-home .scene-poster:not(.film-ready) { z-index: -3; pointer-events: none; }
 [data-river-water] { z-index: -4; pointer-events: none; }
-[data-water-surface] { z-index: -3; opacity: 0; pointer-events: none; }
-[data-water-surface][data-ready] { opacity: 1; }
+[data-water-surface] { z-index: -2; opacity: 0; pointer-events: none; }
+[data-water-surface][data-ready] { opacity: 1; transition: opacity .16s linear; }
 .hero-overlay { --fade-distance: 260px; position: relative; height: 100%; background: linear-gradient(90deg, rgba(6,13,15,.68),rgba(6,13,15,.47) 25%,rgba(6,13,15,.05) 58%,transparent 76%), linear-gradient(0deg,rgba(7,13,16,.8),transparent 23%,transparent 88%,rgba(7,13,16,.12)); }
 .hero-inner { height: 100%; display: flex; align-items: center; }
 .hero-copy { position: relative; padding-bottom: 24px; }
@@ -193,6 +194,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .studio-panel { grid-template-columns: 1fr; gap: 14px; }
   .contact-block { flex-direction: column; align-items: flex-start; gap: 15px; }
   .footer-inner { flex-wrap: wrap; justify-content: space-between; padding-block: 12px; }
+}
+/* Browser chrome can move during a held swipe. Keep the portrait camera
+   framing tied to the width of the scene for the entire gesture. */
+@media (max-width: 680px) and (orientation: portrait) and (pointer: coarse) {
+  .river-hero { height: clamp(500px, 148.75vw, 699px); }
 }
 @media (max-width: 575px) {
   .header-inner { grid-template-columns: 1fr auto; min-height: 65px; }

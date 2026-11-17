@@ -38,7 +38,9 @@ The falls accelerate over the ledges and thin as they drop. A signed distance fi
 
 The sky shader traces rays through a wind-driven, three-dimensional cloud layer. It samples density toward the sun to shade cloud interiors and edges. The same wind bends the fir crowns, while a lower band of mist drifts across the valley.
 
-WebGL targets 30 frames per second and reduces its resolution under sustained load. During startup or when WebGL is unavailable, interrupted, or too slow, the site plays a 16-second film made with the same renderer. Both films run at 24 fps. The desktop film is 1600 × 854 and the portrait film is 720 × 900. The separate ambience track starts on arrival where audible autoplay is allowed, or on the first tap, click, or keypress when the browser requires interaction.
+Touch-first devices play a 30 fps film rendered from the same water and weather shaders. Its 48-second loop spans a complete cloud cycle. Each crop opens with a still from the first decoded frame. The desktop film is 1600 × 854 and the portrait film is 720 × 900.
+
+On desktop, WebGL takes over at the film's current playhead and targets 30 fps. It repaints the full landscape whenever the drawing buffer changes size and limits the simulation step after a dropped frame. The film also covers GPU interruptions and sustained slow rendering. On touch devices WebGL can take over if video playback fails. The separate ambience starts on arrival where audible autoplay is allowed, or on the first tap, click, or keypress when the browser requires interaction.
 
 The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916). The portrait crop uses columns 820–1552. From the checkout root, rebuild the assets affected by your edits.
 
@@ -47,7 +49,7 @@ The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916).
 | Water boundaries | `python tools/build_water_mask.py`, then rebake the pool | NumPy, OpenCV |
 | Pool dynamics and foam | `python tools/bake_water_dynamics.py` | NumPy, Numba, Pillow |
 | Sky boundary, canopy, mist, or cloud volume | `python tools/build_weather.py` | NumPy, Pillow |
-| Films after changing a shader or its inputs | `python tools/render_river.py --browser-channel chrome --output-dir assets/river-scene` | Python Playwright, Chrome with WebGL, FFmpeg with libx264 |
+| Films and opening stills after changing a shader or its inputs | `python tools/render_river.py --browser-channel chrome --output-dir assets/river-scene` | Python Playwright, Chrome with WebGL, FFmpeg with libx264 and libwebp |
 
 For Playwright's bundled Chromium, install it with `python -m playwright install chromium` and omit `--browser-channel chrome`.
 

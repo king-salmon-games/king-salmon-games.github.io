@@ -102,6 +102,27 @@
   // Muted inline video can begin while the browser waits for an audio gesture.
   // Retry both media elements inside the gesture so each gets the same activation.
   const surface = document.querySelector('[data-water-surface]');
+  const poster = water.closest('.river-hero').querySelector('.scene-poster');
+  function revealFilm() {
+    const source = water.currentSrc;
+    function reveal() {
+      if (water.currentSrc === source && water.readyState >= 2 && !water.seeking) {
+        poster.classList.add('film-ready');
+      }
+    }
+    if (water.requestVideoFrameCallback) water.requestVideoFrameCallback(reveal);
+    else reveal();
+  }
+  function videoUnavailable() {
+    if (water.error) poster.classList.remove('film-ready');
+    water.setAttribute('data-needs-renderer', '');
+    water.dispatchEvent(new Event('river-video-unavailable'));
+  }
+  water.addEventListener('loadeddata', revealFilm);
+  water.addEventListener('seeked', revealFilm);
+  water.addEventListener('error', videoUnavailable);
+  water.addEventListener('playing', () => water.removeAttribute('data-needs-renderer'));
+  if (water.readyState >= 2) revealFilm();
   const gestures = ['click', 'touchend', 'keydown'];
   function listenForGesture(needed) {
     for (const type of gestures) {
@@ -113,13 +134,20 @@
     }
   }
   async function startWaterfall() {
-    // Once the GPU has actually drawn, stop decoding the backup film.
-    water.hidden = Boolean(surface?.hasAttribute('data-ready'));
-    const playback = [ambience.play()];
-    if (water.hidden) water.pause();
-    else playback.push(water.play());
+    const live = surface?.hasAttribute('data-ready');
+    const playback = ambience.paused ? [ambience.play()] : [];
+    if (live) {
+      // Leave its last frame underneath the opaque canvas during the handoff.
+      if (!water.paused) water.pause();
+    } else if (water.paused) {
+      playback.push(water.play().catch(error => {
+        if (water.paused && (error.name === 'NotAllowedError' || error.name === 'NotSupportedError')) {
+          videoUnavailable();
+        }
+      }));
+    }
     await Promise.allSettled(playback);
-    listenForGesture((!water.hidden && water.paused) || ambience.paused);
+    listenForGesture((!surface?.hasAttribute('data-ready') && water.paused) || ambience.paused);
   }
   function onGesture(event) {
     if (event.isTrusted) startWaterfall();
@@ -128,9 +156,20 @@
   const mobileSource = water.querySelector('source[media]');
   const desktopSource = water.querySelector('source:not([media])');
   const portrait = window.matchMedia(mobileSource.media);
+  let resumeAt = 0;
+  water.addEventListener('loadedmetadata', () => {
+    if (resumeAt > 0 && Number.isFinite(water.duration) && water.duration > 0) {
+      water.currentTime = resumeAt % water.duration;
+    }
+    resumeAt = 0;
+  });
   function selectWaterfall() {
     const source = portrait.matches ? mobileSource.src : desktopSource.src;
-    if ((water.src || water.currentSrc) !== source) water.src = source;
+    if ((water.src || water.currentSrc) !== source) {
+      resumeAt = water.currentTime;
+      poster.classList.remove('film-ready');
+      water.src = source;
+    }
     startWaterfall();
   }
   surface?.addEventListener('water-renderer-change', startWaterfall);
