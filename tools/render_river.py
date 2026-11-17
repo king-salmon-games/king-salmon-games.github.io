@@ -107,12 +107,13 @@ def encode(page, ffmpeg, destination):
         posters = []
         for film in files:
             poster = film.with_name(film.stem.replace("river-", "river-start-") + ".webp")
-            # WebP uses BT.601 YUV. Preserve the displayed colors of the
-            # decoded H.264 opening frame when preparing the static layer.
+            # Round the decoded BT.709 video to full-range RGB before the
+            # WebP encoder converts to its own color matrix.
             subprocess.run([
                 ffmpeg, "-hide_banner", "-loglevel", "error", "-i", str(film),
-                "-frames:v", "1", "-vf", "scale=in_color_matrix=bt709:out_color_matrix=bt601",
-                "-c:v", "libwebp", "-quality", "88", "-compression_level", "5", str(poster)
+                "-frames:v", "1", "-vf", "scale=flags=accurate_rnd+full_chroma_int,format=bgra",
+                "-c:v", "libwebp", "-pix_fmt", "bgra", "-quality", "91",
+                "-compression_level", "5", str(poster)
             ], check=True)
             posters.append(poster)
         for file in files + posters:
