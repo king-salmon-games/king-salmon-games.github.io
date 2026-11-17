@@ -34,7 +34,7 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 
 ## Waterfall
 
-The falls accelerate over the ledges and thin as they drop. A signed distance field describes the folded sheets so the shader can trace their surfaces and calculate how they transmit and scatter light. Below the falls, an offline shallow-water simulation drives waves and foam from the impact zones around the rock banks. The browser interpolates its 64 frames over eight seconds, adds fine capillary ripples, and reflects the moving sky.
+The falls accelerate over the ledges and thin as they drop. A signed distance field describes the folded sheets so the shader can trace their surfaces and calculate how they transmit and scatter light. Below the falls, an offline shallow-water simulation drives waves and foam around the rock banks. The water runs at half speed, so the pool's 64 simulated frames play over 16 seconds. The browser adds fine ripples and reflects the moving sky.
 
 The sky shader traces rays through a wind-driven, three-dimensional cloud layer. It samples density toward the sun to shade cloud interiors and edges. The same wind bends the fir crowns, while a lower band of mist drifts across the valley.
 

@@ -91,8 +91,8 @@ def encode(page, ffmpeg, destination):
         with subprocess.Popen(command, stdin=subprocess.PIPE) as encoder:
             for i in range(FPS * SECONDS):
                 t = i / FPS
-                # The atlas repeats exactly twice. Crossfade the other, slower
-                # processes at the end so the film opens in phase with live rendering.
+                # Crossfade the non-looping detail at the end so the film
+                # opens in phase with live rendering.
                 x = max(0.0, (t - (SECONDS - OVERLAP)) / OVERLAP)
                 blend = x * x * (3.0 - 2.0 * x)
                 frame = page.evaluate("args => renderFrame(args)", {"time": t, "duration": SECONDS, "blend": blend})

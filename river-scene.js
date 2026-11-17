@@ -50,7 +50,7 @@ async function textureImage(file, packed = false) {
 function loadAssets() {
   assetPromise ??= Promise.all([
     fetchAsset('weather.frag?v=1').then(r => r.text()),
-    fetchAsset('water.frag?v=2').then(r => r.text()),
+    fetchAsset('water.frag?v=3').then(r => r.text()),
     fetchAsset('wind.glsl?v=1').then(r => r.text()),
     textureImage('river-desktop.webp'), textureImage('water-mask.png?v=1'),
     textureImage('water-dynamics.webp?v=1', true),

@@ -29,6 +29,40 @@
     resizeMenu();
   }
 
+  const overlay = document.querySelector('.hero-overlay');
+  if (overlay && !(CSS.supports('animation-timeline: scroll(root block)') &&
+                   CSS.supports('animation-range: 0px 216px'))) {
+    const explore = overlay.querySelector('.explore-link');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const portrait = window.matchMedia('(max-width: 680px)');
+    let distance;
+    let frame = 0;
+    let lastProgress = -1;
+
+    // Older browsers share the CSS fade curve. Read geometry only when the
+    // layout changes so a swipe never triggers a synchronous layout measurement.
+    function paintFade() {
+      frame = 0;
+      const progress = reduced.matches ? 0 : Math.min(1, Math.max(0, window.scrollY / distance));
+      if (progress === lastProgress) return;
+      lastProgress = progress;
+      overlay.style.opacity = 1 - progress * progress * (3 - 2 * progress);
+      explore.style.visibility = progress === 1 ? 'hidden' : '';
+    }
+    function scheduleFade() {
+      if (!frame) frame = requestAnimationFrame(paintFade);
+    }
+    function measureFade() {
+      distance = parseFloat(getComputedStyle(overlay).getPropertyValue('--fade-distance'));
+      scheduleFade();
+    }
+    window.addEventListener('scroll', scheduleFade, { passive: true });
+    window.addEventListener('pageshow', measureFade);
+    reduced.addEventListener('change', scheduleFade);
+    portrait.addEventListener('change', measureFade);
+    measureFade();
+  }
+
   const collection = document.querySelector('.collection');
   if (collection) {
     const track = collection.querySelector('.game-track');

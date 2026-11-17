@@ -1,4 +1,4 @@
-import { createRiverScene, landscape, openSceneContext, sceneStartTime } from './river-scene.js?v=1';
+import { createRiverScene, landscape, openSceneContext, sceneStartTime } from './river-scene.js?v=2';
 
 (() => {
   const canvas = document.querySelector('[data-water-surface]');

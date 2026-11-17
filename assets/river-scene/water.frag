@@ -14,6 +14,12 @@ const float gravity = 9.81;
 const float tau = 6.2831853;
 const vec3 luminance = vec3(0.2126, 0.7152, 0.0722);
 
+// Half-speed water gives the pool one complete cycle per 16-second film.
+// Atmospheric gusts and the reflected sky keep the scene's wall clock.
+float flowTime() {
+    return 0.5 * uTime;
+}
+
 float hash(vec2 p) {
     vec3 h = fract(p.xyx * vec3(.1031, .1030, .0973));
     h += dot(h, h.yxz + 33.33);
@@ -89,10 +95,10 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
     }
     float speed = max(1.35, length(vec2(lateral, entry+gravity*flight)));
     float lane = rootX*metresPerPixel;
-    vec2 parcel = vec2(lane, flight - uTime);
+    vec2 parcel = vec2(lane, flight - flowTime());
     float braid = noise(parcel*vec2(1.15,1.82));
-    float breakup = smoothstep(.28,.96,flight);
-    parcel.x += (.105+.16*breakup)*(braid-.5) + .035*sin(lane*1.12 + parcel.y*4.2);
+    float breakup = smoothstep(.36,1.05,flight);
+    parcel.x += (.075+.10*breakup)*(braid-.5) + .035*sin(lane*1.12 + parcel.y*4.2);
     parcel.x -= breakup*gust*.085;
     float folds = noise(vec2(parcel.x*6.5, parcel.y*3.8 + 1.25*braid));
     float aeration = smoothstep(.02,.95,flight+.25*braid);
@@ -102,7 +108,7 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
     vec2 sheet = vec2(parcel.x, parcel.y*1.6);
     vec3 kx = vec3(6.8,15.4,-23.8);
     vec3 ky = vec3(2.8,-4.0,6.3);
-    vec3 amplitude = vec3(.031,.012,.0058) * (.79+.42*braid);
+    vec3 amplitude = vec3(.027,.009,.0038) * (.79+.42*braid);
     vec3 bend = vec3(.87,-1.3,.64)*sin(lane*1.53+parcel.y*2.05) + folds*.66;
     vec3 ray = normalize(vec3(.21,.24,-1.0));
     vec3 point = vec3(sheet-ray.xy*(.15/-ray.z),.15);
@@ -136,7 +142,7 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
         + .23*wetSample(uv,offset-axis*1.7-across*7.3,vec2(1,0),base);
     float ln = dot(local,luminance);
     float light = dot(N,normalize(vec3(.68,-.28,.70)));
-    float bubbles = clamp(.18+.35*aeration+.31*(folds-.5)+.94*grains,0.0,1.0);
+    float bubbles = clamp(.14+.27*aeration+.27*(folds-.5)+.82*grains,0.0,1.0);
     // Beer-Lambert extinction in a bubble-laden sheet. Dense breaking ribbons
     // scatter the sky; thinner filaments transmit the shadow of the basalt.
     float path = (2.0*halfThickness+.025)/max(.28,dot(N,-ray));
@@ -144,7 +150,7 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
     vec3 diffuse = local*(.88+.19*light);
     vec3 clouded = vec3(.66,.81,.91)*(.44+.69*ln+.14*chop);
     diffuse = mix(diffuse,clouded,scatter*(.24+.22*aeration));
-    float contrast = .88*grains+.09*(folds-.50)+.052*(braid-.5);
+    float contrast = .66*grains+.07*(folds-.50)+.04*(braid-.5);
     diffuse += vec3(.84,.93,1.0)*contrast*(.46+.52*ln);
     float fresnel = .0204+.9796*pow(1.0-max(0.0,dot(N,-ray)),5.0);
     vec3 sky = environment(vec2(uv.x+N.x*.095,.85+N.y*.095));
@@ -166,7 +172,8 @@ vec4 poolState(vec2 world, float frame) {
     vec2 local = clamp((poolToPixel(world)-vec2(480.0,672.0))/vec2(1237.0,244.0),0.0,1.0);
     float a = floor(frame);
     vec4 state = mix(dynamicsTile(local,a),dynamicsTile(local,mod(a+1.0,64.0)),fract(frame));
-    return vec4((state.r-.5)*.5,(state.gb-.5)*1.2,clamp((state.a-.5)*2.0,0.0,1.0));
+    vec3 surface = (state.rgb-.5) * vec3(.5,1.2,1.2);
+    return vec4(.70 * surface, clamp((state.a-.5)*2.0,0.0,1.0));
 }
 
 // Gravity-capillary dispersion for the short ripples below the fluid grid.
@@ -177,10 +184,11 @@ vec3 capillary(vec2 p, float gust) {
     vec3 k=sqrt(kx*kx+ky*ky);
     vec3 omega=sqrt(gravity*k+.000073*k*k*k);
     vec2 current=vec2(.21,.49);
-    float run = sin(p.x*.83+p.y*.95-uTime*.88);
-    vec3 phase=kx*(p.x-current.x*uTime)+ky*(p.y-current.y*uTime)-omega*uTime
+    float t = flowTime();
+    float run = sin(p.x*.83+p.y*.95-t*.88);
+    vec3 phase=kx*(p.x-current.x*t)+ky*(p.y-current.y*t)-omega*t
               +vec3(1.6,-1.13,1.22)*run;
-    vec3 a = vec3(.0034,.0017,.0011)*(.74+.53*gust);
+    vec3 a = vec3(.0021,.0010,.0006)*(.74+.53*gust);
     vec3 ca = a*cos(phase);
     return vec3(dot(a,sin(phase)),dot(ca,kx),dot(ca,ky));
 }
@@ -188,7 +196,7 @@ vec3 capillary(vec2 p, float gust) {
 vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     float s=clamp((px.y-672.0)/244.0,0.0,1.0);
     vec2 target=vec2((px.x-1100.0)/(58.0+50.0*s),7.2*s/(.55+.45*s));
-    float frame=mod(uTime*8.0,64.0);
+    float frame=mod(flowTime()*8.0,64.0);
     // Trace the upper face of the simulated water column. Its signed vertical
     // residual divided by the slope norm is the local tangent distance. The
     // directional derivative intersects the grazing ray with that tangent.
@@ -229,12 +237,12 @@ vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     water*=1.0+.16*clamp(dot(gradient,vec2(-.55,-.85)),-.65,.65);
     // Advected whitecaps from the simulation break into lace and bubbles as
     // they travel around the rock banks. Keep their edge roughness sub-crest.
-    vec2 patch=point.xy-vec2(.13,.55)*uTime;
+    vec2 patch=point.xy-vec2(.13,.55)*flowTime();
     float breakup=noise(patch*5.6+vec2(.22*sin(point.y*1.45),.11*cos(point.x*.92)));
     float granules=whitewaterDetail(vec2(patch.x*1.4,patch.y*.68),breakup);
     float foam=smoothstep(.18,.80,sim.a*(.81+.45*breakup)+granules*.65);
     vec3 froth=mix(vec3(.56,.69,.73),vec3(.80,.85,.86),clamp(.52+.34*breakup+granules*.65,0.,1.));
-    water=mix(water,froth,min(.77,foam));
+    water=mix(water,froth,.56*foam);
     return water;
 }
 
@@ -249,12 +257,12 @@ float flyingDrops(vec2 px, float gust) {
     for (int j=-1;j<=1;++j) {
         float id=column+float(j);
         float seed=hash(vec2(id,5.0));
-        float emission=uTime*.91+seed;
+        float emission=flowTime()*.91+seed;
         float pulse=floor(emission);
         float age=fract(emission)/.91;
         float roll=hash(vec2(id,pulse));
         float x0=(id+.15+.70*roll)*pitch;
-        float up=135.0+132.0*hash(vec2(id+8.0,pulse));
+        float up=97.0+86.0*hash(vec2(id+8.0,pulse));
         float gravityPx=476.0;
         float vx=(seed-.45)*17.0+gust*9.0;
         vec2 center=vec2(x0+vx*age,impactLine(x0)-up*age+.5*gravityPx*age*age);
@@ -277,14 +285,14 @@ vec3 spray(vec2 px, vec2 uv, vec3 underlying, float gust) {
     // Lift an entrained parcel through the spray cloud before drag and wind
     // disperse it. Fine droplets travel ballistically near the foot of the falls.
     float age=height/(31.0+.13*height);
-    vec2 air=vec2(px.x*.011-(.17+.15*gust)*age,age*.64-uTime*.81);
+    vec2 air=vec2(px.x*.011-(.17+.15*gust)*age,age*.64-flowTime()*.81);
     float coarse=noise(air);
     float fine=noise(2.93*air+vec2(coarse,-coarse*.62));
     float density=smoothstep(.24,.83,.66*coarse+.34*fine);
     vec3 scattered=environment(vec2(uv.x,.86));
     vec3 mistLight=mix(vec3(.74,.84,.91),scattered,.18);
     float droplets=flyingDrops(px,gust);
-    float opacity=.06+.31*density+.12*droplets;
+    float opacity=.04+.18*density+.08*droplets;
     return mix(underlying,mistLight,opacity)+droplets*vec3(.27,.33,.37);
 }
 
