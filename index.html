@@ -13,6 +13,8 @@
   <link rel="preload" as="image" href="assets/ui.svg" type="image/svg+xml">
   <script>document.documentElement.classList.add('js-home');</script>
   <link rel="stylesheet" href="styles.css?v=23">
+  <link rel="stylesheet" href="river-light.css?v=1">
+  <script src="river-light.js?v=1"></script>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="King Salmon Games">
   <meta property="og:title" content="King Salmon Games">
@@ -35,7 +37,7 @@
   }
   </script>
   <script src="site.js?v=9" defer onerror="document.documentElement.classList.remove('js-home')"></script>
-  <script type="module" src="water-surface.js?v=8"></script>
+  <script type="module" src="water-surface.js?v=9"></script>
 </head>
 <body class="home-page" id="top">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -57,19 +59,20 @@
   <main id="main">
     <section class="river-hero" aria-labelledby="hero-title">
       <picture class="scene-poster">
-        <source media="(max-width: 680px)" srcset="assets/river-scene/river-start-mobile.webp?v=5">
-        <img src="assets/river-scene/river-start-desktop.webp?v=5" width="1600" height="854" alt="" fetchpriority="high">
+        <source media="(max-width: 680px)" srcset="assets/river-scene/river-start-mobile.webp?v=6">
+        <img src="assets/river-scene/river-start-desktop.webp?v=6" width="1600" height="854" alt="" fetchpriority="high">
       </picture>
       <div class="river-film" aria-hidden="true">
         <div class="film-frame">
           <video data-river-water autoplay muted playsinline loop disablepictureinpicture disableremoteplayback>
-            <source media="(max-width: 680px)" src="assets/river-scene/river-pool-mobile.mp4?v=3" type="video/mp4">
-            <source src="assets/river-scene/river-pool-desktop.mp4?v=3" type="video/mp4">
+            <source media="(max-width: 680px)" src="assets/river-scene/river-pool-mobile.mp4?v=4" type="video/mp4">
+            <source src="assets/river-scene/river-pool-desktop.mp4?v=4" type="video/mp4">
           </video>
           <canvas class="film-pool"></canvas>
         </div>
       </div>
       <canvas data-water-surface aria-hidden="true"></canvas>
+      <canvas class="river-light" aria-hidden="true"></canvas>
       <div class="hero-overlay">
         <div class="shell hero-inner">
           <div class="hero-copy">

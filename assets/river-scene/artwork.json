@@ -30,9 +30,14 @@
     "adaptation": "King Salmon Games sampled a fixed grayscale crop from 192 frames of the three-metre laboratory overfall, fitted signed image-plane distances to moving bright ribbons and local contrast, and baked those fields into a loop. The waterfall shader adapts the loop to the speed and width of each ledge."
   },
   "weather": {
-    "files": ["weather-mask.png", "cloud-noise.png", "weather.frag", "wind.glsl"],
-    "source": "tools/build_weather.py derives sky, canopy and valley mist masks from the landscape. A seeded generator combines tileable three-dimensional value and Worley noise, with a separate cloud coverage map derived from the sky artwork.",
-    "delivery": "weather.frag traces the moving cloud volume with sunlight attenuation, bends fir crowns in the wind and shades drifting valley mist."
+    "files": ["weather-mask.png", "cloud-noise.png", "weather.frag", "wind.glsl", "cloud-shadow.png", "cloud-shadow.frag"],
+    "source": "tools/build_weather.py derives the skyline, individual crown flexibility, a mountain background and a valley cloud density guide from the landscape. The atlas also carries a tileable three-dimensional noise field. tools/build_cloud_shadow.py integrates sunlight through this field to produce the repeating ground shadow.",
+    "delivery": "The shared renderer traces high veils, cloud banks and low valley vapor at separate depths, bends foliage in a traveling wind and projects cloud shadows onto the rocks, trees and river."
+  },
+  "daylight": {
+    "files": ["solar-zones.png"],
+    "source": "Solar position for Salmon River Falls, New York (43.5492 N, 75.9423 W), calculated from the current instant. tools/build_solar_zones.py derives sky, water and reflection weights from the landscape masks.",
+    "delivery": "river-light.js and river-light.css apply a location-based light field to the poster, live scene and native films with seasonal sunlight, dawn and dusk colors and diffuse moonlight."
   },
   "films": {
     "files": ["river-pool-desktop.mp4", "river-pool-mobile.mp4", "river-start-desktop.webp", "river-start-mobile.webp", "pool-detail-desktop.png", "pool-detail-mobile.png"],

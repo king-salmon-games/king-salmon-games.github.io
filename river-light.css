@@ -1,0 +1,16 @@
+/* One registered light map grades the poster, film and GPU scene below the type. */
+.river-light {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 32%;
+  background: var(--river-ambient, #808080);
+  mix-blend-mode: hard-light;
+  pointer-events: none;
+}
+@media (max-width: 680px) {
+  .river-light { object-position: center; }
+}

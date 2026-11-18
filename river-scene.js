@@ -49,15 +49,17 @@ async function textureImage(file, packed = false) {
 
 function loadAssets() {
   assetPromise ??= Promise.all([
-    fetchAsset('weather.frag?v=1').then(r => r.text()),
+    fetchAsset('weather.frag?v=2').then(r => r.text()),
     fetchAsset('water.frag?v=6').then(r => r.text()),
     fetchAsset('wind.glsl?v=1').then(r => r.text()),
     fetchAsset('measured-pool.glsl?v=1').then(r => r.text()),
     fetchAsset('measured-falls.glsl?v=1').then(r => r.text()),
+    fetchAsset('cloud-shadow.frag?v=1').then(r => r.text()),
     textureImage('river-desktop.webp'), textureImage('water-mask.png?v=1'),
     textureImage('water-dynamics.webp?v=1', true),
-    textureImage('weather-mask.png?v=1'), textureImage('cloud-noise.png?v=1'),
-    textureImage('measured-pool.webp?v=1', true), textureImage('measured-falls.webp?v=1', true)
+    textureImage('weather-mask.png?v=2'), textureImage('cloud-noise.png?v=2'),
+    textureImage('measured-pool.webp?v=1', true), textureImage('measured-falls.webp?v=1', true),
+    textureImage('cloud-shadow.png?v=1')
   ]);
   return assetPromise;
 }
@@ -96,12 +98,13 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
       gl.getParameter(gl.MAX_TEXTURE_SIZE) < landscape.width) {
     throw new Error('Insufficient precision or texture size for the river scene');
   }
-  const [weatherSource, waterSource, windSource, measuredPoolSource, measuredFallsSource, ...images] = await loadAssets();
+  const [weatherSource, waterSource, windSource, measuredPoolSource, measuredFallsSource,
+    shadowSource, ...images] = await loadAssets();
   if (!isCurrent()) return null;
 
   const materialSource = waterSource.replace('#include "measured-pool.glsl"', measuredPoolSource)
     .replace('#include "measured-falls.glsl"', measuredFallsSource);
-  const programs = [weatherSource, materialSource, blit].map(source =>
+  const programs = [weatherSource, materialSource, blit, shadowSource].map(source =>
     makeProgram(gl, source.replace('#include "wind.glsl"', windSource)));
   const parallel = gl.getExtension('KHR_parallel_shader_compile');
   while (parallel && programs.some(p => !gl.getProgramParameter(p, parallel.COMPLETION_STATUS_KHR))) {
@@ -109,7 +112,7 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     if (!isCurrent()) return null;
   }
 
-  const [weather, water, copy] = programs.map(program => {
+  const [weather, water, copy, shadows] = programs.map(program => {
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       const details = gl.getAttachedShaders(program).map(shader => gl.getShaderInfoLog(shader)).join(' ');
       throw new Error(gl.getProgramInfoLog(program) + ' ' + details);
@@ -117,7 +120,7 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     gl.useProgram(program);
     for (const [name, unit] of Object.entries({
       uScene: 0, uMask: 1, uDynamics: 2, uWeatherMask: 3, uCloudNoise: 4, uMeasuredPool: 5,
-      uMeasuredFalls: 6, uWeather: 7
+      uMeasuredFalls: 6, uWeather: 7, uCloudShadow: 7
     })) {
       gl.uniform1i(gl.getUniformLocation(program, name), unit);
     }
@@ -131,13 +134,16 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
 
   gl.pixelStorei(gl.UNPACK_COLORSPACE_CONVERSION_WEBGL, gl.NONE);
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-  images.forEach((image, unit) => {
+  const textures = images.map((image, unit) => {
+    const texture = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0 + unit);
-    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    setFiltering(gl, unit === 4 ? gl.REPEAT : gl.CLAMP_TO_EDGE);
+    setFiltering(gl, unit === 4 || unit === 7 ? gl.REPEAT : gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+    return texture;
   });
+  const cloudShadow = textures[7];
 
   gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
@@ -150,6 +156,7 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
   setFiltering(gl, gl.CLAMP_TO_EDGE);
   let envWidth = 0;
   let envHeight = 0;
+  let weatherTime;
 
   function drawPass(pass, time, crop, width, height, imageUnit = 0, poolDetail = 0) {
     gl.useProgram(pass.program);
@@ -168,28 +175,33 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     // entire landscape in this map, including sky outside the phone's crop.
     const targetWidth = Math.max(1, Math.min(landscape.width, Math.round(width / crop[2])));
     gl.activeTexture(gl.TEXTURE7);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, environmentTarget);
-    if (targetWidth !== envWidth) {
-      envWidth = targetWidth;
-      envHeight = Math.max(1, Math.round(envWidth * landscape.height / landscape.width));
-      gl.bindTexture(gl.TEXTURE_2D, environment);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, envWidth, envHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, environment, 0);
-      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
-        throw new Error('The environment buffer is unavailable');
+    // Both pool detail levels of a film frame see exactly the same weather.
+    if (targetWidth !== envWidth || weatherTime !== time) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, environmentTarget);
+      if (targetWidth !== envWidth) {
+        envWidth = targetWidth;
+        envHeight = Math.max(1, Math.round(envWidth * landscape.height / landscape.width));
+        gl.bindTexture(gl.TEXTURE_2D, environment);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, envWidth, envHeight, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, environment, 0);
+        if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+          throw new Error('The environment buffer is unavailable');
+        }
       }
+      // Never sample an attachment while writing into it.
+      gl.bindTexture(gl.TEXTURE_2D, null);
+      gl.viewport(0, 0, envWidth, envHeight);
+      gl.disable(gl.BLEND);
+      drawPass(weather, time, fullLandscape, envWidth, envHeight);
+      weatherTime = time;
     }
-    // Never sample an attachment while writing into it.
-    gl.bindTexture(gl.TEXTURE_2D, null);
-    gl.viewport(0, 0, envWidth, envHeight);
-    gl.disable(gl.BLEND);
-    drawPass(weather, time, fullLandscape, envWidth, envHeight);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.bindTexture(gl.TEXTURE_2D, environment);
     gl.viewport(0, 0, width, height);
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.disable(gl.BLEND);
     if (backdrop) drawPass(copy, time, crop, width, height, 0);
     // Shader outputs are straight RGBA. Store a correctly premultiplied
     // composition for the browser or draw on the opaque plate when encoding.
@@ -197,6 +209,11 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     drawPass(copy, time, crop, width, height, 7);
     drawPass(water, time, crop, width, height, 0, poolDetail);
+    // Weather and water are finished using the environment. Reuse its sampler
+    // for the projected light so the scene fits WebGL 1's eight texture units.
+    gl.bindTexture(gl.TEXTURE_2D, cloudShadow);
+    gl.blendFuncSeparate(gl.ZERO, gl.SRC_COLOR, gl.ZERO, gl.ONE);
+    drawPass(shadows, time, crop, width, height);
   }
   return { render };
 }

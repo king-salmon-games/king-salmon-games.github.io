@@ -24,6 +24,7 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 | `water-surface.js` | Responsive landscape framing, frame budget, and fallback selection |
 | `pool-detail.js` | Scroll-driven pool detail and presentation of the synchronized pool strip on touch devices |
 | `river-scene.js` | WebGL renderer shared by the homepage and the film encoder |
+| `river-light.js`, `river-light.css` | Eastern solar clock and lighting for the sky, forest, waterfall and pool |
 | `assets/river-scene/water.frag` | Falling sheets, simulated pool surface, reflections, foam, and spray |
 | `assets/river-scene/weather.frag` | Volumetric clouds, valley mist, and wind in the trees |
 | `assets/river-scene/wind.glsl` | Shared gust direction, timing, and cloud travel |
@@ -45,7 +46,9 @@ The pool also uses surface motion learned from a stereo recording of the Black S
 
 The network estimates the height and vertical normal component at each horizontal position and time. Multiplying the vertical residual by that component approximates signed distance close to the surface. The shader samples the baked zero crossing and its slopes. The bake removes the patch-wide rise and fall, aligns wave travel downstream, and blends the edges into a four-metre tile and a 16-second loop. Phones play the same surface in the silent waterfall film.
 
-The sky shader traces rays through a wind-driven, three-dimensional cloud layer. It samples density toward the sun to shade cloud interiors and edges. The same wind bends the fir crowns, while a lower band of mist drifts across the valley.
+The sky shader traces sunlight through a high veil and a deeper bank of clouds. On the distant slopes, a separate volume moves pockets of vapor across the mountains and above the falls. A traveling gust bends the fir crowns, followed by smaller branch movements as the trees settle. The renderer projects a softened shadow from the cloud density onto the canopy, rock and water.
+
+The light follows the sun at Salmon River Falls in New York. Solar elevation and direction are calculated from the current UTC instant and the falls' coordinates, so visitors around the world see the same Eastern dawn, daylight and sunset across seasonal and daylight-saving changes. At night the moon's phase and height influence the light on clouds and whitewater. A small color map applies the same light to the poster, the film and the live renderer, and updates on return to the tab. [New York State location](https://dec.ny.gov/places/salmon-river-falls-unique-area) · [Solar equations](https://gml.noaa.gov/grad/solcalc/solareqns.PDF)
 
 Touch-first devices play a 30 fps film rendered from the same shaders. Each decoded frame contains the visible landscape and a second rendering of its foreground pool at full detail. Scrolling blends that strip over the water using a shoreline mask. The strip and the landscape share a playback clock through the entire 48-second loop. The visible desktop and portrait compositions are 1600 × 854 and 720 × 900. Each opening still contains only the visible composition.
 
@@ -57,7 +60,8 @@ The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916).
 | --- | --- | --- |
 | Water boundaries | `python tools/build_water_mask.py`, then rebake the pool | NumPy, OpenCV |
 | Pool dynamics and foam | `python tools/bake_water_dynamics.py` | NumPy, Numba, Pillow |
-| Sky boundary, canopy, valley mist, or cloud volume | `python tools/build_weather.py` | NumPy, Pillow |
+| Sky boundary, canopy, valley clouds, or cloud shadows | `python tools/build_weather.py`, then `python tools/build_solar_zones.py` | NumPy, Pillow |
+| Water boundaries used for sunlight and reflections | `python tools/build_solar_zones.py` after changing the water mask | Pillow |
 | Films, opening stills, and pool masks after changing a shader or its inputs | `python tools/render_river.py --browser-channel chrome --output-dir assets/river-scene` | Python Playwright and Pillow, Chrome with WebGL, FFmpeg with libx264 and libwebp |
 
 For Playwright's bundled Chromium, install it with `python -m playwright install chromium` and omit `--browser-channel chrome`.
