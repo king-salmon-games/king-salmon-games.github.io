@@ -169,12 +169,15 @@ vec2 poolToPixel(vec2 world) {
     return vec2(1100.0+world.x*(58.0+50.0*s),672.0+244.0*s);
 }
 
+#include "measured-pool.glsl"
+
 vec4 poolState(vec2 world, float frame) {
     vec2 local = clamp((poolToPixel(world)-vec2(480.0,672.0))/vec2(1237.0,244.0),0.0,1.0);
     float a = floor(frame);
     vec4 state = mix(dynamicsTile(local,a),dynamicsTile(local,mod(a+1.0,64.0)),fract(frame));
     vec3 surface = (state.rgb-.5) * vec3(.5,1.2,1.2);
-    return vec4(.70 * surface, clamp((state.a-.5)*2.0,0.0,1.0));
+    vec3 measured = measuredPoolWave(world, uTime);
+    return vec4(.70 * surface + .75 * measured, clamp((state.a-.5)*2.0,0.0,1.0));
 }
 
 // Gravity-capillary dispersion for the short ripples below the fluid grid.
@@ -255,6 +258,49 @@ vec3 packetSurface(PoolPacket packet, vec2 displacement) {
     return vec3(dot(packet.amplitude,shape),dot(tangent,packet.kx),dot(tangent,packet.ky));
 }
 
+// A bubble drifts with surface current after its parent wave rolls past.
+// In steady streamline coordinates the speed stays bounded even on long visits.
+// These two shoals are the same submerged bars used in the shallow-water bake.
+vec2 carriedFoam(vec2 p, float s) {
+    vec2 crossBar = (p.x - vec2(-1.6, 3.0)) / vec2(1.2, 1.7);
+    vec2 alongBar = (p.y - vec2(4.15, 5.45) - .55) / vec2(1.15, 1.4);
+    vec2 wake = exp(-crossBar*crossBar - alongBar*alongBar);
+    float across = p.x - .24*p.y - .44*dot(crossBar, wake);
+    float along = p.y + .24*(wake.x + wake.y) - .55*flowTime();
+    vec2 parcel = vec2(across, along);
+    float patch = noise(parcel*vec2(1.75, 1.30));
+    float bend = noise(parcel*vec2(3.3, 2.15) + vec2(.8, 3.6));
+    vec2 q = parcel*vec2(7.5, 3.1) + vec2(1.23*bend, .95*patch);
+
+    // The edge of an advected patch stretches into a thin irregular filament.
+    // Use its analytic gradient to resolve its width in metres at any crop.
+    vec2 cell = floor(q);
+    vec2 f = fract(q);
+    vec2 w = f*f*(3.0-2.0*f);
+    float a = hash(cell);
+    float b = hash(cell+vec2(1,0));
+    float c = hash(cell+vec2(0,1));
+    float d = hash(cell+1.0);
+    float value = mix(mix(a,b,w.x),mix(c,d,w.x),w.y);
+    vec2 derivative = 6.0*f*(1.0-f)
+        * vec2(mix(b-a,d-c,w.y)*7.5, mix(c-a,d-b,w.x)*3.1);
+    float magnitude = max(length(derivative), .65);
+    float distance = abs(value - (.46 + .13*(patch-.5))) / magnitude;
+    vec2 normal = derivative / magnitude;
+    float width = 58.0+50.0*s;
+    float depth = .55+.45*s;
+    vec2 pixel = uCrop.zw*plateSize/uResolution;
+    float footprint = abs(normal.x)*pixel.x/width
+        + abs(3.96*normal.y/(depth*depth)-50.0*p.x*normal.x/width)*pixel.y/244.0;
+    float radius = .009 + .013*bend;
+    float halfPixel = max(.005, .5*footprint);
+    float overlap = min(distance+halfPixel, radius) - max(distance-halfPixel, -radius);
+    float filament = max(0.0, overlap)/(2.0*halfPixel);
+    float torn = noise(1.7*q+vec2(3.6,-1.9));
+    filament *= smoothstep(.23,.74,.67*torn+.33*patch);
+    return vec2(patch, filament);
+}
+
 vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     float s=clamp((px.y-672.0)/244.0,0.0,1.0);
     vec2 target=vec2((px.x-1100.0)/(58.0+50.0*s),7.2*s/(.55+.45*s));
@@ -289,16 +335,22 @@ vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     float face=clamp(dot(view,N),0.0,1.0);
     // Refract the ray at an air/freshwater interface. The finite depth of the
     // optically active surface layer bounds displacement on the scene plate.
-    vec3 transmitted=refract(ray,N,1.0/1.333);
+    // Foam scatters near the surface. Applying the full clear-water optical
+    // path to a breaking crest makes its bright edges fracture into a grid.
+    float coolCrest = smoothstep(.29,.63,dot(base,luminance))
+                    * smoothstep(-.045,.115,base.b-base.r);
+    float air = clamp(.52*coolCrest+.68*smoothstep(.13,.52,sim.a),0.0,1.0);
+    vec3 opticalNormal=normalize(vec3(-sim.gb-ripple.yz*(.84-.20*air),1.0));
+    vec3 transmitted=refract(ray,opticalNormal,1.0/1.333);
     vec3 flatT=refract(ray,vec3(0,0,1),1.0/1.333);
-    float depth=.18+.11*s;
+    float depth=(.18+.11*s)*(1.0-.68*air);
     vec2 bent=(transmitted.xy/max(.30,-transmitted.z)-flatT.xy/-flatT.z)*depth;
     vec2 offset=poolToPixel(point.xy+bent)-px;
     vec3 refracted=wetSample(uv,offset,vec2(0,1),base);
     vec3 local=.59*refracted
         +.225*wetSample(uv,offset+vec2(5.3,2.3),vec2(0,1),base)
         +.185*wetSample(uv,offset-vec2(4.7,2.6),vec2(0,1),base);
-    local=mix(local,refracted,detail*(.13+.25*s));
+    local=mix(local,refracted,detail*(.10+.15*s)*(1.0-.5*air));
     float fresnel=.0204+.9796*pow(1.0-face,5.0);
     vec2 skyUv=vec2(uv.x+.18*reflected.x,.615+.38*clamp(reflected.z,0.,1.));
     vec3 sky=environment(skyUv);
@@ -307,18 +359,15 @@ vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     float glint=pow(max(dot(N,halfVector),0.0),42.0);
     water+=vec3(.98,.77,.61)*glint*(.045+.075*gust);
     water*=1.0+.16*clamp(dot(gradient,vec2(-.55,-.85)),-.65,.65);
-    // Advected whitecaps from the simulation break into lace and bubbles as
-    // they travel around the rock banks. Keep their edge roughness sub-crest.
-    vec2 patch=point.xy-vec2(.13,.55)*flowTime();
-    float breakup=noise(patch*5.6+vec2(.22*sin(point.y*1.45),.11*cos(point.x*.92)));
-    float granules=whitewaterDetail(vec2(patch.x*1.4,patch.y*.68),breakup);
-    float foam=smoothstep(.18,.80,sim.a*(.81+.45*breakup)+granules*.65);
-    // A fine crest can gather bubbles from existing aerated water. Its cap
-    // uses the same resolved height and slope as the optical surface.
+    vec2 carried = carriedFoam(point.xy,s);
+    float foam=smoothstep(.14,.72,sim.a*(.69+.68*carried.x));
+    // Short breaking crests produce fresh foam. The remaining, longer-lived
+    // filaments travel downstream through water already aerated by the falls.
     float crest=smoothstep(.12,.69,84.0*fine.x-dot(fine.yz,vec2(.71,.34)));
     float whitecap=crest*smoothstep(.08,.42,sim.a);
-    foam+=detail*(.32*whitecap*(1.0-foam)-.12*(1.0-crest)*foam);
-    vec3 froth=mix(vec3(.56,.69,.73),vec3(.80,.85,.86),clamp(.52+.34*breakup+granules*.65,0.,1.));
+    float bubbles = smoothstep(.075,.37,sim.a+.105*coolCrest)*(.38+.32*s+.38*coolCrest);
+    foam += (1.0-foam) * ((.29+.13*detail)*carried.y*bubbles + .19*detail*whitecap);
+    vec3 froth=mix(vec3(.55,.67,.72),vec3(.80,.85,.86),.36+.43*carried.x+.12*carried.y);
     water=mix(water,froth,.56*foam);
     return water;
 }

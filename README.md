@@ -39,9 +39,11 @@ The falls accelerate over the ledges and thin as they drop. A signed distance fi
 
 As the hero title and button fade, the foreground pool resolves three shorter bands of surface waves. Their heights and slopes affect reflections, refraction, and the foam on each crest. The live shader takes up to five surface-intersection steps and filters waves smaller than a pixel.
 
-The sky shader traces rays through a wind-driven, three-dimensional cloud layer. It samples density toward the sun to shade cloud interiors and edges. The same wind bends the fir crowns, while a lower band of mist drifts across the valley.
+The pool also uses surface motion learned from a stereo recording of the Black Sea. The dataset supplies grids of water heights reconstructed from two camera views. We took 240 frames at 15 Hz over a 1.55 m square, held out every eighth frame, and trained a neural signed distance field near the air–water interface. It learns from points above, below, and on the measured surface. On the held-out frames the fitted surface had a height RMSE of 2.83 cm, compared with 7.23 cm for the training-set mean water level. This measures interpolation within the recording. The riverbanks, current and foam come from the site's river simulation. [Data and credits](https://kingsalmongames.com/support.html#river-credits)
 
-At the front of the pool, a separate volume of river mist drifts over the ripples. The desktop and portrait versions follow the same crop as the water, including during a swipe. The browser plays the transparent mist loop over either renderer and uses its still frame when a visitor prefers reduced motion.
+The network estimates the height and vertical normal component at each horizontal position and time. Multiplying the vertical residual by that component approximates signed distance close to the surface. The shader samples the baked zero crossing and its slopes. The bake removes the patch-wide rise and fall, aligns wave travel downstream, and blends the edges into a four-metre tile and a 16-second loop. Phones play the same surface in the silent waterfall film.
+
+The sky shader traces rays through a wind-driven, three-dimensional cloud layer. It samples density toward the sun to shade cloud interiors and edges. The same wind bends the fir crowns, while a lower band of mist drifts across the valley.
 
 Touch-first devices play a 30 fps film rendered from the same shaders. Each decoded frame contains the visible landscape and a second rendering of its foreground pool at full detail. Scrolling blends that strip over the water using a shoreline mask. The strip and the landscape share a playback clock through the entire 48-second loop. The visible desktop and portrait compositions are 1600 × 854 and 720 × 900. Each opening still contains only the visible composition.
 
@@ -54,10 +56,26 @@ The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916).
 | Water boundaries | `python tools/build_water_mask.py`, then rebake the pool | NumPy, OpenCV |
 | Pool dynamics and foam | `python tools/bake_water_dynamics.py` | NumPy, Numba, Pillow |
 | Sky boundary, canopy, valley mist, or cloud volume | `python tools/build_weather.py` | NumPy, Pillow |
-| Mist over the foreground pool | `python tools/build_river_mist.py` | NumPy, Pillow with animated WebP support |
 | Films, opening stills, and pool masks after changing a shader or its inputs | `python tools/render_river.py --browser-channel chrome --output-dir assets/river-scene` | Python Playwright and Pillow, Chrome with WebGL, FFmpeg with libx264 and libwebp |
 
 For Playwright's bundled Chromium, install it with `python -m playwright install chromium` and omit `--browser-channel chrome`.
+
+### Rebuild the measured pool waves
+
+To export the existing trained weights, run these commands with Python, PyTorch, NumPy and Pillow. Rebuild the films afterward.
+
+```sh
+python tools/train_pool_sdf.py --device cpu --weights tools/measured-pool-sdf.npz --surface fitted-pool.npz
+python tools/bake_measured_pool.py fitted-pool.npz
+```
+
+To retrain from the original observations, install h5py and `fsspec[http]` for extraction. The released fit used PyTorch 2.4.1 and torch-directml on a Radeon RX 6700 XT. The trainer also accepts `--device cuda` or `--device cpu`.
+
+```sh
+python tools/extract_measured_pool.py --output measured-capture.npz
+python tools/train_pool_sdf.py measured-capture.npz --device directml --weights tools/measured-pool-sdf.npz --surface fitted-pool.npz
+python tools/bake_measured_pool.py fitted-pool.npz
+```
 
 ## Navigation
 

@@ -13,15 +13,18 @@
     "source": "tools/build_water_mask.py maps the ledges, pool and spray in river-desktop.webp. tools/bake_water_dynamics.py uses the pool mask as the bank boundary for a depth-averaged shallow-water simulation with waterfall inflow and transported foam.",
     "delivery": "Lossless 1536 × 768 WebP atlas holding 64 frames of water height, two surface slopes and foam over eight seconds. water.frag traces the falling sheets and pool surface, adds capillary ripples and spray, and samples the moving environment for reflections."
   },
+  "measured_pool": {
+    "files": ["measured-pool.glsl", "measured-pool.webp"],
+    "dataset": "A Data Set of Sea Surface Stereo Images to Resolve Space-Time Wave Fields (2019)",
+    "creators": ["Pedro Veras Guimarães", "Fabrice Ardhuin", "Filippo Bergamasco", "Fabien Leckler", "Jean-François Filipot", "Jeseon Yoo", "Alvise Benetazzo"],
+    "source": "https://doi.org/10.12770/af599f42-2770-4d6d-8209-13f40e2c292f",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "adaptation": "A 32 by 32 patch of Black Sea stereo surface measurements recorded on 2011-10-01 at 16:18 UTC was extracted over 240 frames at 15 Hz. King Salmon Games trained a near-surface neural signed distance field on the observations, blended the edges of its zero surface into a loop, and rescaled the fitted waves for use with the river simulation."
+  },
   "weather": {
     "files": ["weather-mask.png", "cloud-noise.png", "weather.frag", "wind.glsl"],
     "source": "tools/build_weather.py derives sky, canopy and valley mist masks from the landscape. A seeded generator combines tileable three-dimensional value and Worley noise, with a separate cloud coverage map derived from the sky artwork.",
     "delivery": "weather.frag traces the moving cloud volume with sunlight attenuation, bends fir crowns in the wind and shades drifting valley mist."
-  },
-  "foreground_mist": {
-    "files": ["river-mist-desktop.webp", "river-mist-mobile.webp", "river-mist-desktop-still.webp", "river-mist-mobile-still.webp"],
-    "source": "tools/build_river_mist.py samples a three-dimensional volume above the pool. The water mask keeps mist off the rock banks, and both crops use the same camera as the river.",
-    "delivery": "Transparent WebP loops cover the lowest 300 rows of the 916-row landscape. Static frames provide the reduced-motion versions."
   },
   "films": {
     "files": ["river-pool-desktop.mp4", "river-pool-mobile.mp4", "river-start-desktop.webp", "river-start-mobile.webp", "pool-detail-desktop.png", "pool-detail-mobile.png"],

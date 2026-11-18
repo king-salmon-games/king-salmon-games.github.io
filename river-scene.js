@@ -50,11 +50,13 @@ async function textureImage(file, packed = false) {
 function loadAssets() {
   assetPromise ??= Promise.all([
     fetchAsset('weather.frag?v=1').then(r => r.text()),
-    fetchAsset('water.frag?v=4').then(r => r.text()),
+    fetchAsset('water.frag?v=5').then(r => r.text()),
     fetchAsset('wind.glsl?v=1').then(r => r.text()),
+    fetchAsset('measured-pool.glsl?v=1').then(r => r.text()),
     textureImage('river-desktop.webp'), textureImage('water-mask.png?v=1'),
     textureImage('water-dynamics.webp?v=1', true),
-    textureImage('weather-mask.png?v=1'), textureImage('cloud-noise.png?v=1')
+    textureImage('weather-mask.png?v=1'), textureImage('cloud-noise.png?v=1'),
+    textureImage('measured-pool.webp?v=1', true)
   ]);
   return assetPromise;
 }
@@ -93,10 +95,11 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
       gl.getParameter(gl.MAX_TEXTURE_SIZE) < landscape.width) {
     throw new Error('Insufficient precision or texture size for the river scene');
   }
-  const [weatherSource, waterSource, windSource, ...images] = await loadAssets();
+  const [weatherSource, waterSource, windSource, measuredPoolSource, ...images] = await loadAssets();
   if (!isCurrent()) return null;
 
-  const programs = [weatherSource, waterSource, blit].map(source =>
+  const poolSource = waterSource.replace('#include "measured-pool.glsl"', measuredPoolSource);
+  const programs = [weatherSource, poolSource, blit].map(source =>
     makeProgram(gl, source.replace('#include "wind.glsl"', windSource)));
   const parallel = gl.getExtension('KHR_parallel_shader_compile');
   while (parallel && programs.some(p => !gl.getProgramParameter(p, parallel.COMPLETION_STATUS_KHR))) {
@@ -111,7 +114,7 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     }
     gl.useProgram(program);
     for (const [name, unit] of Object.entries({
-      uScene: 0, uMask: 1, uDynamics: 2, uWeatherMask: 3, uCloudNoise: 4, uWeather: 6
+      uScene: 0, uMask: 1, uDynamics: 2, uWeatherMask: 3, uCloudNoise: 4, uMeasuredPool: 5, uWeather: 6
     })) {
       gl.uniform1i(gl.getUniformLocation(program, name), unit);
     }

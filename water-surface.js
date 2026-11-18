@@ -7,7 +7,7 @@ async function startLiveScene(canvas, poolDetail) {
   let engine;
   let gl;
   try {
-    engine = await import('./river-scene.js?v=3');
+    engine = await import('./river-scene.js?v=4');
     gl = engine.openSceneContext(canvas);
   } catch {
     // The film also covers module loading failures and blocked GPU contexts.
