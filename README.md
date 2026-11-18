@@ -25,6 +25,7 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 | `pool-detail.js` | Scroll-driven pool detail and presentation of the synchronized pool strip on touch devices |
 | `river-scene.js` | WebGL renderer shared by the homepage and the film encoder |
 | `river-light.js`, `river-light.css` | Eastern solar clock and lighting for the sky, forest, waterfall and pool |
+| `river-moon.js`, `moon-disc.js`, `river-moon-clouds.js` | Local lunar position, surface shading, and cloud cover. Run `node tools/check_river_moon.mjs` to compare against JPL Horizons. |
 | `assets/river-scene/water.frag` | Falling sheets, simulated pool surface, reflections, foam, and spray |
 | `assets/river-scene/weather.frag` | Volumetric clouds, valley mist, and wind in the trees |
 | `assets/river-scene/wind.glsl` | Shared gust direction, timing, and cloud travel |
@@ -52,6 +53,8 @@ The light follows the sun at Salmon River Falls in New York. Solar elevation and
 
 Touch-first devices play a 30 fps film rendered from the same shaders. Each decoded frame contains the visible landscape and a second rendering of its foreground pool at full detail. Scrolling blends that strip over the water using a shoreline mask. The strip and the landscape share a playback clock through the entire 48-second loop. The visible desktop and portrait compositions are 1600 × 854 and 720 × 900. Each opening still contains only the visible composition.
 
+The night sky uses the Moon’s local altitude, azimuth, phase and pole orientation at the falls. The painted panorama faces south, with a compressed elevation scale and an enlarged lunar disk for readability on phones. The illuminated side follows the Sun. An optical transmission atlas sampled from the weather shader lets the same moving clouds, branches and ridge obscure the Moon in every rendering mode. The lunar surface map comes from NASA’s Scientific Visualization Studio. [CGI Moon Kit](https://svs.gsfc.nasa.gov/4720/)
+
 On desktop, WebGL takes over at the film's current playhead and targets 30 fps. It repaints the full landscape whenever the drawing buffer changes size and limits the simulation step after a dropped frame. The film also covers GPU interruptions and sustained slow rendering. On touch devices WebGL can take over if video playback fails.
 
 The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916). The portrait crop uses columns 820–1552. From the checkout root, rebuild the assets affected by your edits.
@@ -61,6 +64,7 @@ The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916).
 | Water boundaries | `python tools/build_water_mask.py`, then rebake the pool | NumPy, OpenCV |
 | Pool dynamics and foam | `python tools/bake_water_dynamics.py` | NumPy, Numba, Pillow |
 | Sky boundary, canopy, valley clouds, or cloud shadows | `python tools/build_weather.py`, then `python tools/build_solar_zones.py` | NumPy, Pillow |
+| Lunar cloud cover after changing the sky or wind | `python tools/bake_moon_clouds.py --browser-channel chrome` | Python Playwright and Pillow, Chrome with WebGL |
 | Water boundaries used for sunlight and reflections | `python tools/build_solar_zones.py` after changing the water mask | Pillow |
 | Films, opening stills, and pool masks after changing a shader or its inputs | `python tools/render_river.py --browser-channel chrome --output-dir assets/river-scene` | Python Playwright and Pillow, Chrome with WebGL, FFmpeg with libx264 and libwebp |
 

@@ -13,8 +13,9 @@
   <link rel="preload" as="image" href="assets/ui.svg" type="image/svg+xml">
   <script>document.documentElement.classList.add('js-home');</script>
   <link rel="stylesheet" href="styles.css?v=23">
-  <link rel="stylesheet" href="river-light.css?v=1">
-  <script src="river-light.js?v=1"></script>
+  <link rel="stylesheet" href="river-light.css?v=2">
+  <script defer src="river-moon.js?v=1"></script>
+  <script src="river-light.js?v=2"></script>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="King Salmon Games">
   <meta property="og:title" content="King Salmon Games">
@@ -37,7 +38,7 @@
   }
   </script>
   <script src="site.js?v=9" defer onerror="document.documentElement.classList.remove('js-home')"></script>
-  <script type="module" src="water-surface.js?v=9"></script>
+  <script type="module" src="water-surface.js?v=10"></script>
 </head>
 <body class="home-page" id="top">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -73,6 +74,7 @@
       </div>
       <canvas data-water-surface aria-hidden="true"></canvas>
       <canvas class="river-light" aria-hidden="true"></canvas>
+      <canvas class="river-moon" aria-hidden="true" hidden></canvas>
       <div class="hero-overlay">
         <div class="shell hero-inner">
           <div class="hero-copy">

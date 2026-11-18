@@ -14,3 +14,11 @@
 @media (max-width: 680px) {
   .river-light { object-position: center; }
 }
+.river-moon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}

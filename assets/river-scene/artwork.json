@@ -39,6 +39,12 @@
     "source": "Solar position for Salmon River Falls, New York (43.5492 N, 75.9423 W), calculated from the current instant. tools/build_solar_zones.py derives sky, water and reflection weights from the landscape masks.",
     "delivery": "river-light.js and river-light.css apply a location-based light field to the poster, live scene and native films with seasonal sunlight, dawn and dusk colors and diffuse moonlight."
   },
+  "moon": {
+    "files": ["lunar-albedo.webp", "moon-clouds.webp"],
+    "source": "NASA’s Scientific Visualization Studio, CGI Moon Kit (2025 color map), based on the Lunar Reconnaissance Orbiter WAC color mosaic.",
+    "url": "https://svs.gsfc.nasa.gov/4720/",
+    "adaptation": "The 2048 × 1024 map was converted to grayscale and reduced to 384 × 192. The renderer projects it onto the near hemisphere and illuminates it with the local phase and orientation at Salmon River Falls. tools/bake_moon_clouds.py samples the moving sky and canopy from weather.frag to mask the disk and halo."
+  },
   "films": {
     "files": ["river-pool-desktop.mp4", "river-pool-mobile.mp4", "river-start-desktop.webp", "river-start-mobile.webp", "pool-detail-desktop.png", "pool-detail-mobile.png"],
     "source": "tools/render_river.py renders the landscape and the detailed pool at the same timestamp, packs both into one video frame per crop, extracts its opening still, and derives the registered pool mask from water-mask.png.",

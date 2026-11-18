@@ -63,8 +63,12 @@ vec3 highVeil(vec3 clear, vec3 view, float wind, float warmth) {
         vec2 stria = volumeNoise(parcel);
         tau += .16*smoothstep(.39,.68,stria.x+.15*(stria.y-.5));
     }
+#ifdef LUNAR_TRANSMISSION
+    return vec3(exp(-tau));
+#else
     vec3 light = mix(vec3(.79,.82,.89),vec3(.97,.815,.75),warmth);
     return mix(clear, light, 1.-exp(-tau));
+#endif
 }
 
 vec3 renderSky(vec2 uv, float t, float wind) {
@@ -114,7 +118,11 @@ vec3 renderSky(vec2 uv, float t, float wind) {
         }
         point += view*stepLength;
     }
+#ifdef LUNAR_TRANSMISSION
+    return clear * through;
+#else
     return pow(radiance+through*pow(clear,vec3(2.2)),vec3(1.0/2.2));
+#endif
 }
 
 vec2 valleyTile(vec2 px, float clearLayer) {
@@ -185,6 +193,13 @@ void main() {
         .19*bend + (1.0+gust)*.92*sin(limb+.82));
     vec2 sourceUv = clamp(uv - shift/plate, .0001, .9999);
     vec3 sourceMask = texture2D(uWeatherMask, sourceUv).rgb;
+#ifdef LUNAR_TRANSMISSION
+    // A ray from the moon traverses the same veil, cumulus and moving canopy
+    // as the rendered landscape. The offline baker stores its direct light.
+    float sky = sourceMask.r * smoothstep(.004,.085,weight);
+    float light = sky > .003 ? sky * renderSky(uv,t,wind.y).r : 0.;
+    gl_FragColor = vec4(vec3(light),1.);
+#else
     vec3 land = texture2D(uScene,sourceUv).rgb;
     if (sourceMask.g > .01) {
         float tilt = sin(limb) * (.40+.60*gust);
@@ -195,4 +210,5 @@ void main() {
     // Fade only the very outside of the influence region. Moving silhouettes
     // replace both the needles and the tiny sky openings between them.
     gl_FragColor=vec4(land,smoothstep(.004,.085,weight));
+#endif
 }

@@ -31,6 +31,7 @@ async function startLiveScene(canvas, poolDetail) {
   let needsResize = true;
   let previousDraw = null;
   let sceneTime = sceneStartTime;
+  canvas.riverSceneTime = () => sceneTime;
 
   function showSurface(ready) {
     if (canvas.hasAttribute('data-ready') === ready) return;

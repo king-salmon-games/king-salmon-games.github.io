@@ -25,27 +25,6 @@
     return { altitude: Math.asin(up) / rad, east };
   }
 
-  // Low-precision geocentric coordinates are sufficient for diffuse moonlight
-  // through an overcast sky. Only the illuminated fraction above the local
-  // horizon contributes. See https://www.aa.quae.nl/en/reken/hemelpositie.html
-  function moonlight(time, sunAltitude) {
-    if (sunAltitude >= -4) return 0;
-    const days = time / 86400000 - 10957.5; // days since J2000 noon
-    const lunarAnomaly = (134.963 + 13.064993 * days) * rad;
-    const lon = (218.316 + 13.176396 * days + 6.289 * Math.sin(lunarAnomaly)) * rad;
-    const lat = 5.128 * rad * Math.sin((93.272 + 13.229350 * days) * rad);
-    const tilt = 23.44 * rad;
-    const equatorY = Math.cos(lat) * Math.sin(lon) * Math.cos(tilt) - Math.sin(lat) * Math.sin(tilt);
-    const declination = Math.asin(Math.sin(lat) * Math.cos(tilt) + Math.cos(lat) * Math.sin(tilt) * Math.sin(lon));
-    const ra = Math.atan2(equatorY, Math.cos(lat) * Math.cos(lon));
-    const hour = (280.46 + 360.9856474 * days + longitude) * rad - ra;
-    const up = Math.sin(latitude) * Math.sin(declination) + Math.cos(latitude) * Math.cos(declination) * Math.cos(hour);
-    const solarAnomaly = (357.529 + .98560028 * days) * rad;
-    const solarLon = (280.46 + .9856474 * days + 1.915 * Math.sin(solarAnomaly)) * rad;
-    const phase = .5 * (1 - Math.cos(lon - solarLon) * Math.cos(lat));
-    return Math.max(0, up) * phase * phase * Math.min(1, (-4 - sunAltitude) / 8);
-  }
-
   // Hard-light transfer values. Midgray preserves the original exposure.
   // Each altitude keys ambient terrain, open sky, whitewater, and direct sun.
   const stops = [
@@ -74,6 +53,7 @@
 
   const portrait = matchMedia('(max-width: 680px)');
   let surface, context, zones, pixels, timer;
+  let moonView, loadingMoon = false;
   function paint(sun, [land, sky, water, direct]) {
     // These columns match the original portrait extraction (820..1552 of
     // 1717). Object-fit then applies the same cover crop as the film/poster.
@@ -136,17 +116,25 @@
     const now = Date.now();
     const sun = sunAt(now);
     const colors = lighting(sun.altitude);
-    const moon = moonlight(now, sun.altitude);
-    // Scattering opens up the cloud deck and foam more than the dark banks.
-    // No separate celestial disc is visible behind this overcast sky.
+    const moon = sun.altitude < 0 ? window.riverMoonAt?.(now) : null;
+    const moonlight = (moon?.moonlight || 0) * Math.max(0, Math.min(1, (-4 - sun.altitude) / 8));
     for (let i = 0; i < colors.length; ++i) {
-      for (let k = 0; k < 3; ++k) colors[i][k] += moonResponse[i][k] * moon;
+      for (let k = 0; k < 3; ++k) colors[i][k] += moonResponse[i][k] * moonlight;
     }
     const ambient = 'rgb(' + colors[0].map(Math.round).join(',') + ')';
     if (surface) surface.style.backgroundColor = ambient;
     else document.documentElement.style.setProperty('--river-ambient', ambient);
     if (document.hidden) return;
     if (zones && context) paint(sun, colors);
+    if (moonView) {
+      moonView.update(sun.altitude, moon);
+    } else if (surface && moon?.altitude > 0 && !loadingMoon) {
+      loadingMoon = true;
+      import('./moon-disc.js?v=1').then(async ({ mountMoon }) => {
+        moonView = await mountMoon(surface.parentElement);
+        if (moonView) refresh();
+      }).catch(() => {}).finally(() => { loadingMoon = false; });
+    }
     // Solar color changes slowly. The field is reused for every video/GPU
     // frame; scrolling never regenerates it or changes its registration.
     timer = setTimeout(refresh, 20000 - now % 20000);
