@@ -162,16 +162,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @media (min-width: 1780px) {
   .river-hero { height: clamp(650px,66svh,940px); }
 }
-@media (min-width: 751px) {
-  /* Two square covers and the trading-floor panorama share one image height. */
-  :is(.js-home .collection, .collection.is-scrollable) .game-track {
-    --panorama-ratio: calc(840 / 473);
-    --cover-size: calc((100% - 2 * var(--game-gap)) / (2 + var(--panorama-ratio)));
-    display: flex;
-  }
-  .game-card { flex: 0 0 var(--cover-size); }
-  .game-card-wide { flex-basis: calc(var(--cover-size) * var(--panorama-ratio)); }
-}
 @media (max-width: 1000px) {
   .river-hero { height: clamp(452px,60svh,665px); }
   .hero-copy h1 { font-size: clamp(75px,10.2vw,104px); }

@@ -114,6 +114,7 @@ The game imagery reuses artwork and development captures from the studio's sourc
 | `creamcheese-wordmark.png` | `creamcheese`: `game/Assets/Resources/Art/TitleWordmark.png` |
 | `creamcheese-gameplay.jpg` | `creamcheese`: `artifacts/campaign-qa/puzzle-area-1-390x844-normal-view-1.png` |
 | `pocketlink-artwork.jpg` | `link-party`: `ios/LinkPartyApp/Assets.xcassets/AppIcon.appiconset/PocketLink-1024-v5.png` |
+| `wumbos-app-icon.jpg`, `gallery/wumbos.webp` | [Wumbos TestFlight marketing icon on Apple's CDN](https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/2b/16/61/2b166106-10f8-ae72-f9d1-2eec0a3615e5/AppIcon-0-0-1x_U007emarketing-0-3-85-220.png/1024x1024bb.png), 1024 × 1024 |
 | `nemus-app-icon.jpg` | New dark forest icon, created with built-in image generation; prompt and provenance in `assets/icon-provenance.json` |
 | `kakatta-app-icon.jpg` | `kakatta`: `game/Assets/ExternalForge/Branding/KakattaAppIcon.png`; approved source hash in `art/app-icon-provenance.json` |
 
