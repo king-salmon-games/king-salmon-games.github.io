@@ -53,17 +53,7 @@ vec3 wetSample(vec2 uv, vec2 offset, vec2 material, vec3 fallback) {
     return mix(fallback, texture2D(uScene, src).rgb, smoothstep(.015, .34, coverage));
 }
 
-// Sample the high frequency structure of a real patch of broken water in the
-// source artwork in parcel coordinates. Mirrored edges are continuous. Two
-// scales sample separate patches with different orientations and travel speeds.
-float whitewaterDetail(vec2 parcel, float disorder) {
-    vec2 a = abs(fract(parcel * vec2(.36, 1.38) + vec2(disorder*.13, parcel.x*.037))*2.0-1.0);
-    vec2 b = abs(fract(parcel * vec2(.87, 2.71) + vec2(disorder*.24, -.13*parcel.x))*2.0-1.0);
-    vec2 uv1 = vec2(0.0, 1.0) + uvOffset(vec2(1270.0,410.0) + a * vec2(80.0,92.0));
-    vec2 uv2 = vec2(0.0, 1.0) + uvOffset(vec2(1426.0,409.0) + b * vec2(47.0,75.0));
-    return dot(texture2D(uScene,uv1).rgb,luminance) - .66
-         + .47*(dot(texture2D(uScene,uv2).rgb,luminance) - .65);
-}
+#include "measured-falls.glsl"
 
 // Top edges of the main shelf and its three lower lateral ledges, in plate pixels.
 float ledge(float x, float tier) {
@@ -102,10 +92,30 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
     parcel.x += (.075+.10*breakup)*(braid-.5) + .035*sin(lane*1.12 + parcel.y*4.2);
     parcel.x -= breakup*gust*.085;
     float folds = noise(vec2(parcel.x*6.5, parcel.y*3.8 + 1.25*braid));
-    float aeration = smoothstep(.02,.95,flight+.25*braid);
+    // The main shelf releases a broad continuous sheet. The narrow ledges
+    // shear into smaller threads and entrain air sooner in their shorter drop.
+    float ledgeJet = step(.5,tier);
+    float breadth = mix(3.60,1.85,ledgeJet);
+    float fallBand = mix(1.25,2.0,ledgeJet);
+    vec2 fieldUv = vec2(parcel.x/breadth,parcel.y*fallBand);
+    fieldUv += vec2(.034*(folds-.5)+.41*tier,.075*(braid-.5)+.23*tier);
+    float materialTime = uTime + .72*sin(.71*lane) + 1.37*tier;
+    vec3 observed = measuredFallsMaterial(fieldUv,materialTime);
+    // Strands compress sharply at the lip. Filter features that would cross
+    // multiple source texels per display pixel there, particularly on mobile.
+    vec2 pixel = plateSize*uCrop.zw/uResolution;
+    float texels = max(128.0*metresPerPixel*pixel.x/breadth,
+                       96.0*fallBand*metresPerPixel*pixel.y/(entry+gravity*flight));
+    observed.gb *= 1.0/(1.0+.14*texels*texels);
+    float aeration = smoothstep(.02,.95,flight*(1.0+.42*ledgeJet)+.25*braid);
+    // Single-view relief is art-directed into the modeled sheet. The source
+    // field supplies fold placement and optical contrast, not metric depth.
+    float relief = observed.r*mix(.034,.020,ledgeJet)*(1.0-.23*breakup);
+    float lean = observed.b*mix(.38,.28,ledgeJet);
     // q=v*h conserves the flux of a ribbon as gravity thins it.
     float flux = .038+.064*noise(vec2(lane*2.9,.7));
-    float halfThickness = .5*flux/speed;
+    float halfThickness = .5*flux/speed*(1.0-.26*ledgeJet)
+        * (1.0+.29*observed.r+.13*observed.g);
     vec2 sheet = vec2(parcel.x, parcel.y*1.6);
     vec3 kx = vec3(6.8,15.4,-23.8);
     vec3 ky = vec3(2.8,-4.0,6.3);
@@ -117,20 +127,20 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
     // liquid ribbon. Its upper zero crossing sets parallax and the optical path.
     for (int i=0; i<5; ++i) {
         vec3 phase = kx*point.x+ky*point.y+bend;
-        float height = dot(amplitude,sin(phase));
+        float height = dot(amplitude,sin(phase)) + relief + lean*(point.x-sheet.x);
         float distanceToSheet = (abs(point.z-height)-halfThickness)*.73;
         point += ray*distanceToSheet;
     }
     vec3 derivative = amplitude*cos(kx*point.x+ky*point.y+bend);
-    vec2 slope = vec2(dot(derivative,kx), dot(derivative,ky)*1.6/speed);
+    vec2 slope = vec2(dot(derivative,kx)+lean, dot(derivative,ky)*1.6/speed);
     vec3 N = normalize(vec3(-slope,1.0));
     vec2 parallax = (point.xy-sheet)/metresPerPixel;
     // Air shear shreds the sheet into shorter clusters nearer the plunge pool.
     // Their material coordinates continue to fall with the parent jet.
     float clusters = noise(vec2(parcel.x*4.6+.72*braid,parcel.y*10.2+.63*folds));
-    float grains = whitewaterDetail(parcel,folds+.31*breakup*clusters);
-    grains = mix(grains, .58*grains+.11*(clusters-.5), breakup);
-    float chop = smoothstep(.42,.80,folds+.47*grains);
+    float ribbons = .22*observed.r + mix(.125,.18,ledgeJet)*observed.g;
+    ribbons = mix(ribbons,.64*ribbons+.083*(clusters-.5),breakup);
+    float chop = smoothstep(.42,.80,folds+.50*ribbons);
     vec2 offset = parallax+N.xy*vec2(6.2,3.2)+vec2((braid-.5)*3.2, (folds-.5)*3.0);
     vec3 refracted = wetSample(uv,offset,vec2(1,0),base);
     // Remove stationary fine foam from the key art. Retain its broad lighting
@@ -143,7 +153,8 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
         + .23*wetSample(uv,offset-axis*1.7-across*7.3,vec2(1,0),base);
     float ln = dot(local,luminance);
     float light = dot(N,normalize(vec3(.68,-.28,.70)));
-    float bubbles = clamp(.14+.27*aeration+.27*(folds-.5)+.82*grains,0.0,1.0);
+    float bubbles = clamp(.14+.27*aeration+.22*(folds-.5)+.64*ribbons
+                          +(.085+.075*ledgeJet)*observed.g,0.0,1.0);
     // Beer-Lambert extinction in a bubble-laden sheet. Dense breaking ribbons
     // scatter the sky; thinner filaments transmit the shadow of the basalt.
     float path = (2.0*halfThickness+.025)/max(.28,dot(N,-ray));
@@ -151,7 +162,7 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
     vec3 diffuse = local*(.88+.19*light);
     vec3 clouded = vec3(.66,.81,.91)*(.44+.69*ln+.14*chop);
     diffuse = mix(diffuse,clouded,scatter*(.24+.22*aeration));
-    float contrast = .66*grains+.07*(folds-.50)+.04*(braid-.5);
+    float contrast = .82*ribbons+.054*(folds-.50)+.033*(braid-.5);
     diffuse += vec3(.84,.93,1.0)*contrast*(.46+.52*ln);
     float fresnel = .0204+.9796*pow(1.0-max(0.0,dot(N,-ray)),5.0);
     vec3 sky = environment(vec2(uv.x+N.x*.095,.85+N.y*.095));

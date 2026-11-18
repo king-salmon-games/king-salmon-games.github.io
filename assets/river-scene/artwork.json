@@ -21,6 +21,14 @@
     "license": "https://creativecommons.org/licenses/by/4.0/",
     "adaptation": "A 32 by 32 patch of Black Sea stereo surface measurements recorded on 2011-10-01 at 16:18 UTC was extracted over 240 frames at 15 Hz. King Salmon Games trained a near-surface neural signed distance field on the observations, blended the edges of its zero surface into a loop, and rescaled the fitted waves for use with the river simulation."
   },
+  "measured_falls": {
+    "files": ["measured-falls.glsl", "measured-falls.webp"],
+    "dataset": "Accompanying dataset for Nappe oscillations on free-overfall structures, data from laboratory experiments (audio and video)",
+    "creators": ["Maurine Lodomez", "Blake Tullis", "Pierre Archambeau", "Vasileios Kitsikoudis", "Michel Pirotton", "Benjamin Dewals", "Sébastien Erpicum"],
+    "source": "https://doi.org/10.5281/zenodo.3686591",
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "adaptation": "King Salmon Games sampled a fixed grayscale crop from 192 frames of the three-metre laboratory overfall, fitted signed image-plane distances to moving bright ribbons and local contrast, and baked those fields into a loop. The waterfall shader adapts the loop to the speed and width of each ledge."
+  },
   "weather": {
     "files": ["weather-mask.png", "cloud-noise.png", "weather.frag", "wind.glsl"],
     "source": "tools/build_weather.py derives sky, canopy and valley mist masks from the landscape. A seeded generator combines tileable three-dimensional value and Worley noise, with a separate cloud coverage map derived from the sky artwork.",

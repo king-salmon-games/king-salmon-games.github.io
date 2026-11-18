@@ -37,6 +37,8 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 
 The falls accelerate over the ledges and thin as they drop. A signed distance field describes the folded sheets so the shader can trace their surfaces and calculate how they transmit and scatter light. Below the falls, an offline shallow-water simulation drives waves and foam around the rock banks. The water runs at half speed, so the pool's 64 simulated frames play over 16 seconds. The browser adds fine ripples and reflects the moving sky.
 
+The bright ribbons on the waterfall come from a separate neural field trained on 192 high-speed camera frames of water falling over a three-metre weir. The training targets are signed distances in the camera image to the edges of the bright water, together with local brightness. The distance fit had a root mean square error of 0.88 pixels on 24 withheld frames in the 160 × 112 crop. The footage supplies the optical pattern. The three-dimensional sheet geometry and its thickness are modeled. A broad ribbon pattern follows the main drop, and the short ledges use narrower, more aerated streams. [Experimental data](https://doi.org/10.5281/zenodo.3686591)
+
 As the hero title and button fade, the foreground pool resolves three shorter bands of surface waves. Their heights and slopes affect reflections, refraction, and the foam on each crest. The live shader takes up to five surface-intersection steps and filters waves smaller than a pixel.
 
 The pool also uses surface motion learned from a stereo recording of the Black Sea. The dataset supplies grids of water heights reconstructed from two camera views. We took 240 frames at 15 Hz over a 1.55 m square, held out every eighth frame, and trained a neural signed distance field near the air–water interface. It learns from points above, below, and on the measured surface. On the held-out frames the fitted surface had a height RMSE of 2.83 cm, compared with 7.23 cm for the training-set mean water level. This measures interpolation within the recording. The riverbanks, current and foam come from the site's river simulation. [Data and credits](https://kingsalmongames.com/support.html#river-credits)
@@ -75,6 +77,21 @@ To retrain from the original observations, install h5py and `fsspec[http]` for e
 python tools/extract_measured_pool.py --output measured-capture.npz
 python tools/train_pool_sdf.py measured-capture.npz --device directml --weights tools/measured-pool-sdf.npz --surface fitted-pool.npz
 python tools/bake_measured_pool.py fitted-pool.npz
+```
+
+### Rebuild the falling-sheet material
+
+To rebuild the eight-second material loop from the saved field, use Python with PyTorch, SciPy, NumPy and Pillow. The site samples the baked texture. Rebuild the films after changing the material.
+
+```sh
+python tools/train_falls_sdf.py --device cpu --weights tools/measured-falls-sdf.npz --atlas assets/river-scene/measured-falls.webp
+```
+
+To retrain, extract the original clip with FFmpeg and a RAR-capable 7-Zip installation, then fit the field on the GPU. The extractor also accepts an existing copy of the original recording through `--video`.
+
+```sh
+python tools/extract_measured_falls.py --output measured-falls.npz
+python tools/train_falls_sdf.py measured-falls.npz --device directml --weights tools/measured-falls-sdf.npz --atlas assets/river-scene/measured-falls.webp
 ```
 
 ## Navigation

@@ -1,4 +1,4 @@
-import { setupPoolDetail } from './pool-detail.js?v=2';
+import { setupPoolDetail } from './pool-detail.js?v=3';
 
 async function startLiveScene(canvas, poolDetail) {
   const hero = canvas.closest('.river-hero');
@@ -7,7 +7,7 @@ async function startLiveScene(canvas, poolDetail) {
   let engine;
   let gl;
   try {
-    engine = await import('./river-scene.js?v=4');
+    engine = await import('./river-scene.js?v=5');
     gl = engine.openSceneContext(canvas);
   } catch {
     // The film also covers module loading failures and blocked GPU contexts.
@@ -88,10 +88,13 @@ async function startLiveScene(canvas, poolDetail) {
     if (!nextFrame) nextFrame = now;
     if (now + 0.5 < nextFrame) return;
     nextFrame += (1 + Math.floor((now + 0.5 - nextFrame) / frameInterval)) * frameInterval;
-    if (gl.isContextLost()) return;
+    if (gl.isContextLost()) {
+      contextLost();
+      return;
+    }
     if (!canvas.hasAttribute('data-ready')) {
       // Start at the frame the visitor can see, even after a slow startup.
-      sceneTime = sceneStartTime + (film.readyState >= 2 && !film.seeking ? film.currentTime : 0);
+      if (film.readyState >= 2 && !film.seeking) sceneTime = sceneStartTime + film.currentTime;
     } else if (previousDraw !== null) {
       // A stalled browser should resume the wind without skipping through it.
       sceneTime += Math.min(now - previousDraw, 2 * frameInterval) / 1000;
@@ -101,6 +104,7 @@ async function startLiveScene(canvas, poolDetail) {
       // Resizing clears the drawing buffer. Change it only inside a draw and
       // submit the entire opaque landscape before returning to the compositor.
       if (needsResize) resize();
+      if (needsResize) return;
       scene.render(sceneTime, crop, true, poolDetail());
     } catch {
       // A GPU reset can invalidate the framebuffer before the loss event is
@@ -142,7 +146,9 @@ async function startLiveScene(canvas, poolDetail) {
     sampleStart = 0;
     samples = 0;
     slowWindows = 0;
-    if (!retired && scene && onScreen && !document.hidden) frame = requestAnimationFrame(draw);
+    if (!retired && scene && onScreen && !document.hidden && !hero.hasAttribute('data-suspended')) {
+      frame = requestAnimationFrame(draw);
+    }
   }
 
   async function initialize() {
@@ -163,20 +169,40 @@ async function startLiveScene(canvas, poolDetail) {
 
   const resizeObserver = new ResizeObserver(requestResize);
   resizeObserver.observe(hero);
-  const visibilityObserver = new IntersectionObserver(([entry]) => {
-    onScreen = entry.isIntersecting;
+  const visibilityObserver = new IntersectionObserver(entries => {
+    onScreen = entries[entries.length - 1].isIntersecting;
     syncFrames();
   });
   visibilityObserver.observe(hero);
-  document.addEventListener('visibilitychange', syncFrames);
-  portrait.addEventListener('change', requestResize);
-  canvas.addEventListener('webglcontextlost', event => {
+  function syncViewport() {
     if (retired) return;
-    event.preventDefault();
+    if (!hero.hasAttribute('data-suspended')) {
+      // Intersection and queued animation callbacks can both be stale on return.
+      const bounds = hero.getBoundingClientRect();
+      onScreen = bounds.bottom > 0 && bounds.top < document.documentElement.clientHeight;
+      requestResize();
+      if (gl.isContextLost()) {
+        contextLost();
+        return;
+      }
+    }
+    syncFrames();
+  }
+  hero.addEventListener('river-lifecycle-change', syncViewport);
+  hero.addEventListener('river-check-frames', () => {
+    if (scene && (previousDraw === null || performance.now() - previousDraw > 500)) syncViewport();
+  });
+  portrait.addEventListener('change', requestResize);
+  function contextLost() {
     generation++;
     scene = null;
     syncFrames();
     showSurface(false);
+  }
+  canvas.addEventListener('webglcontextlost', event => {
+    if (retired) return;
+    event.preventDefault();
+    contextLost();
   });
   canvas.addEventListener('webglcontextrestored', initialize);
   initialize();

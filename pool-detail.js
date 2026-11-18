@@ -27,7 +27,8 @@ export function setupPoolDetail(hero, film, surface) {
   function needsStrip() {
     // WebKit can expose a scaled decoded frame. Check its aspect ratio and
     // use normalized source rows so both the native and scaled raster align.
-    return detail > 0 && visible && !document.hidden && !surface.hasAttribute('data-ready') &&
+    return detail > 0 && visible && !document.hidden && !hero.hasAttribute('data-suspended') &&
+      !surface.hasAttribute('data-ready') &&
       !film.seeking && film.readyState >= 2 && film.videoWidth > 0 &&
       Math.abs(film.videoHeight - film.videoWidth * packedHeight / filmWidth) <= 2;
   }
@@ -102,8 +103,8 @@ export function setupPoolDetail(hero, film, surface) {
       hero.style.setProperty('--film-cover-width', coverWidth + 'px');
     }).observe(hero);
   }
-  new IntersectionObserver(([entry]) => {
-    visible = entry.isIntersecting;
+  new IntersectionObserver(entries => {
+    visible = entries[entries.length - 1].isIntersecting;
     syncCopy();
   }).observe(hero);
   window.addEventListener('scroll', () => {
@@ -113,10 +114,25 @@ export function setupPoolDetail(hero, film, surface) {
     film.addEventListener(event, syncCopy);
   }
   surface.addEventListener('water-renderer-change', syncCopy);
-  document.addEventListener('visibilitychange', syncCopy);
+  function restoreCopy() {
+    // A saved page can retain callback IDs after the decoder or compositor
+    // discards the callbacks themselves. Re-arm from the current media frame.
+    cancelAnimationFrame(scrollFrame);
+    scrollFrame = 0;
+    stopCopy();
+    lastTime = -1;
+    if (hero.hasAttribute('data-suspended') || document.hidden) return;
+    const bounds = hero.getBoundingClientRect();
+    visible = bounds.bottom > 0 && bounds.top < document.documentElement.clientHeight;
+    configure();
+  }
+  hero.addEventListener('river-lifecycle-change', restoreCopy);
+  hero.addEventListener('river-check-frames', () => {
+    if (scrollFrame || (needsStrip() && Math.abs(film.currentTime - lastTime) > 0.25)) restoreCopy();
+  });
+  layer.addEventListener('contextrestored', restoreCopy);
   portrait.addEventListener('change', configure);
   reduced.addEventListener('change', readScroll);
-  window.addEventListener('pageshow', configure);
   configure();
   return () => detail;
 }

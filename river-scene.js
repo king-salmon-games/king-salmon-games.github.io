@@ -50,13 +50,14 @@ async function textureImage(file, packed = false) {
 function loadAssets() {
   assetPromise ??= Promise.all([
     fetchAsset('weather.frag?v=1').then(r => r.text()),
-    fetchAsset('water.frag?v=5').then(r => r.text()),
+    fetchAsset('water.frag?v=6').then(r => r.text()),
     fetchAsset('wind.glsl?v=1').then(r => r.text()),
     fetchAsset('measured-pool.glsl?v=1').then(r => r.text()),
+    fetchAsset('measured-falls.glsl?v=1').then(r => r.text()),
     textureImage('river-desktop.webp'), textureImage('water-mask.png?v=1'),
     textureImage('water-dynamics.webp?v=1', true),
     textureImage('weather-mask.png?v=1'), textureImage('cloud-noise.png?v=1'),
-    textureImage('measured-pool.webp?v=1', true)
+    textureImage('measured-pool.webp?v=1', true), textureImage('measured-falls.webp?v=1', true)
   ]);
   return assetPromise;
 }
@@ -95,11 +96,12 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
       gl.getParameter(gl.MAX_TEXTURE_SIZE) < landscape.width) {
     throw new Error('Insufficient precision or texture size for the river scene');
   }
-  const [weatherSource, waterSource, windSource, measuredPoolSource, ...images] = await loadAssets();
+  const [weatherSource, waterSource, windSource, measuredPoolSource, measuredFallsSource, ...images] = await loadAssets();
   if (!isCurrent()) return null;
 
-  const poolSource = waterSource.replace('#include "measured-pool.glsl"', measuredPoolSource);
-  const programs = [weatherSource, poolSource, blit].map(source =>
+  const materialSource = waterSource.replace('#include "measured-pool.glsl"', measuredPoolSource)
+    .replace('#include "measured-falls.glsl"', measuredFallsSource);
+  const programs = [weatherSource, materialSource, blit].map(source =>
     makeProgram(gl, source.replace('#include "wind.glsl"', windSource)));
   const parallel = gl.getExtension('KHR_parallel_shader_compile');
   while (parallel && programs.some(p => !gl.getProgramParameter(p, parallel.COMPLETION_STATUS_KHR))) {
@@ -114,7 +116,8 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     }
     gl.useProgram(program);
     for (const [name, unit] of Object.entries({
-      uScene: 0, uMask: 1, uDynamics: 2, uWeatherMask: 3, uCloudNoise: 4, uMeasuredPool: 5, uWeather: 6
+      uScene: 0, uMask: 1, uDynamics: 2, uWeatherMask: 3, uCloudNoise: 4, uMeasuredPool: 5,
+      uMeasuredFalls: 6, uWeather: 7
     })) {
       gl.uniform1i(gl.getUniformLocation(program, name), unit);
     }
@@ -142,7 +145,7 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
   const environment = gl.createTexture();
   const environmentTarget = gl.createFramebuffer();
-  gl.activeTexture(gl.TEXTURE6);
+  gl.activeTexture(gl.TEXTURE7);
   gl.bindTexture(gl.TEXTURE_2D, environment);
   setFiltering(gl, gl.CLAMP_TO_EDGE);
   let envWidth = 0;
@@ -164,7 +167,7 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     // The sky/forest map also supplies incident light to the river. Keep the
     // entire landscape in this map, including sky outside the phone's crop.
     const targetWidth = Math.max(1, Math.min(landscape.width, Math.round(width / crop[2])));
-    gl.activeTexture(gl.TEXTURE6);
+    gl.activeTexture(gl.TEXTURE7);
     gl.bindFramebuffer(gl.FRAMEBUFFER, environmentTarget);
     if (targetWidth !== envWidth) {
       envWidth = targetWidth;
@@ -192,7 +195,7 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     // composition for the browser or draw on the opaque plate when encoding.
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    drawPass(copy, time, crop, width, height, 6);
+    drawPass(copy, time, crop, width, height, 7);
     drawPass(water, time, crop, width, height, 0, poolDetail);
   }
   return { render };

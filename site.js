@@ -65,15 +65,29 @@
   if (!water) return;
 
   const surface = document.querySelector('[data-water-surface]');
-  const poster = water.closest('.river-hero').querySelector('.scene-poster');
+  const hero = water.closest('.river-hero');
+  const poster = hero.querySelector('.scene-poster');
+  let resumeCheck;
+  let revealFrame;
+  function active() {
+    return !document.hidden && !hero.hasAttribute('data-suspended');
+  }
+  function heroInView() {
+    const bounds = hero.getBoundingClientRect();
+    return bounds.bottom > 0 && bounds.top < document.documentElement.clientHeight;
+  }
   function revealFilm() {
+    if (revealFrame !== undefined) water.cancelVideoFrameCallback(revealFrame);
+    revealFrame = undefined;
+    if (poster.classList.contains('film-ready') || water.readyState < 2) return;
     const source = water.currentSrc;
     function reveal() {
+      revealFrame = undefined;
       if (water.currentSrc === source && water.readyState >= 2 && !water.seeking) {
         poster.classList.add('film-ready');
       }
     }
-    if (water.requestVideoFrameCallback) water.requestVideoFrameCallback(reveal);
+    if (water.requestVideoFrameCallback) revealFrame = water.requestVideoFrameCallback(reveal);
     else reveal();
   }
   function videoUnavailable() {
@@ -84,7 +98,10 @@
   water.addEventListener('loadeddata', revealFilm);
   water.addEventListener('seeked', revealFilm);
   water.addEventListener('error', videoUnavailable);
-  water.addEventListener('playing', () => water.removeAttribute('data-needs-renderer'));
+  water.addEventListener('playing', () => {
+    water.removeAttribute('data-needs-renderer');
+    revealFilm();
+  });
   if (water.readyState >= 2) revealFilm();
   const gestures = ['click', 'touchend', 'keydown'];
   function listenForGesture(needed) {
@@ -97,27 +114,32 @@
     }
   }
   async function startWaterfall() {
-    if (surface?.hasAttribute('data-ready')) {
+    if (!active() || surface?.hasAttribute('data-ready')) {
       // Leave its last frame underneath the opaque canvas during the handoff.
       if (!water.paused) water.pause();
     } else if (water.paused) {
       try {
         await water.play();
       } catch (error) {
-        if (water.paused && (error.name === 'NotAllowedError' || error.name === 'NotSupportedError')) {
+        if (active() && water.paused && (error.name === 'NotAllowedError' || error.name === 'NotSupportedError')) {
           videoUnavailable();
         }
       }
     }
-    listenForGesture(!surface?.hasAttribute('data-ready') && water.paused);
+    listenForGesture(active() && !surface?.hasAttribute('data-ready') && water.paused);
   }
   function onGesture(event) {
     if (event.isTrusted) startWaterfall();
   }
   // Some decoders pause during the seek back to the opening frame of a loop.
   water.addEventListener('seeked', () => {
-    if (water.loop && water.paused && water.currentTime < 0.1 && !document.hidden &&
+    if (water.loop && water.paused && water.currentTime < 0.1 && active() &&
         !surface?.hasAttribute('data-ready')) startWaterfall();
+  });
+  // A browser can deliver its background pause after the page is visible again.
+  water.addEventListener('pause', () => {
+    if (active() && water.paused && !water.error && !surface?.hasAttribute('data-ready') &&
+        heroInView()) startWaterfall();
   });
   // Some browsers select a video source before the mobile viewport settles.
   const mobileSource = water.querySelector('source[media]');
@@ -141,10 +163,59 @@
   }
   surface?.addEventListener('water-renderer-change', startWaterfall);
   portrait.addEventListener('change', selectWaterfall);
-  window.addEventListener('pageshow', selectWaterfall);
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) startWaterfall();
-  });
+  function checkRestoredPlayback(retried = false) {
+    if (!heroInView()) return;
+    const time = water.currentTime;
+    const source = water.currentSrc;
+    resumeCheck = setTimeout(() => {
+      if (!active() || !heroInView()) return;
+      // Some browsers discard callbacks shortly after pageshow. Let each
+      // renderer check for actual progress before replacing its pending work.
+      hero.dispatchEvent(new Event('river-check-frames'));
+      revealFilm();
+      if (surface?.hasAttribute('data-ready') ||
+          water.currentSrc !== source || water.seeking || water.readyState < 3 ||
+          water.currentTime !== time) return;
+      if (retried) {
+        videoUnavailable();
+        return;
+      }
+      // A suspended decoder can still report "playing" with a stopped clock.
+      // Reopen playback at its current frame before trying the GPU fallback.
+      water.pause();
+      startWaterfall();
+      checkRestoredPlayback(true);
+    }, 1200);
+  }
+  function suspendRiver() {
+    if (hero.hasAttribute('data-suspended')) return;
+    clearTimeout(resumeCheck);
+    hero.setAttribute('data-suspended', '');
+    water.pause();
+    hero.dispatchEvent(new Event('river-lifecycle-change'));
+  }
+  function restoreRiver() {
+    if (document.hidden) return;
+    clearTimeout(resumeCheck);
+    hero.removeAttribute('data-suspended');
+    hero.dispatchEvent(new Event('river-lifecycle-change'));
+    selectWaterfall();
+    revealFilm();
+    checkRestoredPlayback();
+  }
+  document.addEventListener('visibilitychange', () => document.hidden ? suspendRiver() : restoreRiver());
+  document.addEventListener('freeze', suspendRiver);
+  document.addEventListener('resume', restoreRiver);
+  window.addEventListener('pagehide', suspendRiver);
+  window.addEventListener('pageshow', restoreRiver);
+  window.addEventListener('focus', restoreRiver);
+  new IntersectionObserver(entries => {
+    if (entries[entries.length - 1].isIntersecting && active() && !surface?.hasAttribute('data-ready')) {
+      startWaterfall();
+      clearTimeout(resumeCheck);
+      checkRestoredPlayback();
+    }
+  }).observe(hero);
   listenForGesture(true);
   selectWaterfall();
 })();
