@@ -124,24 +124,22 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .round-button .icon { width: 16px; height: 16px; }
 .round-button:hover:enabled { border-color: var(--coral); background: #ff896f14; }
 .round-button:disabled { opacity: .35; cursor: default; }
-.game-track { list-style: none; margin: 0; padding: 0 0 8px; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 23px; }
-:is(.js-home .collection, .collection.is-scrollable) .game-track { grid-template-columns: none; grid-auto-columns: calc((100% - 46px)/3); grid-auto-flow: column; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.game-track { --game-gap: 23px; list-style: none; margin: 0; padding: 0 0 8px; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: var(--game-gap); }
+:is(.js-home .collection, .collection.is-scrollable) .game-track { grid-template-columns: none; grid-auto-columns: calc((100% - 2 * var(--game-gap)) / 3); grid-auto-flow: column; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
 :is(.js-home .collection, .collection.is-scrollable) .game-track::-webkit-scrollbar { display: none; }
 .game-card { min-width: 0; position: relative; scroll-snap-align: start; }
 .legacy-anchor { position: absolute; top: 0; left: 0; }
-.game-cover { position: relative; }
-.game-image { display: block; aspect-ratio: 1.64; overflow: hidden; background: #1c2426; border: 1px solid #ffffff16; border-radius: 5px; }
-.game-image img { width: 100%; height: 100%; object-fit: cover; transition: transform .6s cubic-bezier(.2,.7,.2,1), filter .3s; }
-.game-image:hover img, .game-image:focus-visible img { transform: scale(1.035); }
-.card-wishlist { position: absolute; right: 11px; top: 11px; display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #ffffff60; border-radius: 50%; background: #0d1114ad; color: white; backdrop-filter: blur(5px); transition: color .2s, border-color .2s; }
+.game-image { display: block; border: 1px solid var(--rule); border-radius: 5px; transition: border-color .2s; }
+.game-image img { width: 100%; height: auto; border-radius: 4px; }
+.game-image:is(:hover, :focus-visible) { border-color: var(--coral); }
+.card-wishlist { grid-column: 2; grid-row: 1 / span 2; align-self: start; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--rule); border-radius: 50%; color: var(--ink); transition: color .2s, border-color .2s; }
 .card-wishlist:hover { color: var(--coral); border-color: var(--coral); }
 .card-wishlist .icon { width: 15px; height: 15px; }
-.game-details { margin-top: 13px; }
-.game-name { display: flex; align-items: center; justify-content: space-between; gap: 12px; text-decoration: none; }
+.game-details { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; margin-top: 13px; }
+.game-name { grid-column: 1; align-self: start; width: fit-content; text-decoration: none; }
 .game-name h3 { font: 700 clamp(26px,2.2vw,39px)/1.11 var(--font-display); letter-spacing: -.01em; }
-.game-name .icon { width: 17px; height: 17px; color: #b1b7b5; transition: transform .2s; }
-.game-name:hover .icon { transform: translate(2px,-2px); color: var(--coral); }
-.game-details > p { margin-top: 4px; color: var(--muted); font-size: 13px; }
+.game-name:is(:hover, :focus-visible) { color: var(--coral); }
+.game-details > p { grid-column: 1; margin-top: 4px; color: var(--muted); font-size: 13px; }
 .creamfly { display: inline-flex; gap: 5px; align-items: center; margin-top: 12px; color: var(--ink); font-size: 12px; }
 .creamfly .icon { width: 12px; height: 12px; }
 .creamfly span { color: var(--muted); }
@@ -164,11 +162,20 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @media (min-width: 1780px) {
   .river-hero { height: clamp(650px,66svh,940px); }
 }
+@media (min-width: 751px) {
+  /* Two square covers and the trading-floor panorama share one image height. */
+  :is(.js-home .collection, .collection.is-scrollable) .game-track {
+    --panorama-ratio: calc(840 / 473);
+    --cover-size: calc((100% - 2 * var(--game-gap)) / (2 + var(--panorama-ratio)));
+    display: flex;
+  }
+  .game-card { flex: 0 0 var(--cover-size); }
+  .game-card-wide { flex-basis: calc(var(--cover-size) * var(--panorama-ratio)); }
+}
 @media (max-width: 1000px) {
   .river-hero { height: clamp(452px,60svh,665px); }
   .hero-copy h1 { font-size: clamp(75px,10.2vw,104px); }
-  .game-track { gap: 16px; }
-  :is(.js-home .collection, .collection.is-scrollable) .game-track { grid-auto-columns: calc((100% - 32px) / 3); }
+  .game-track { --game-gap: 16px; }
 }
 @media (max-width: 750px) {
   :is(.js-home .collection, .collection.is-scrollable) .game-track { grid-auto-columns: calc((100% - 16px) / 2); }
@@ -222,7 +229,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .site-header.has-menu .menu-toggle { display: inline-flex; }
   :is(.js-home .collection, .collection.is-scrollable) .game-track { grid-auto-columns: 86%; padding-right: 2px; }
   .game-track { grid-template-columns: 1fr; gap: 14px; }
-  .game-image { aspect-ratio: 1.65; }
   .footer-inner { font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) {
