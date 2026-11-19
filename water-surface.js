@@ -1,4 +1,4 @@
-import { setupPoolDetail } from './pool-detail.js?v=3';
+import { setupPoolDetail } from './pool-detail.js?v=4';
 
 async function startLiveScene(canvas, poolDetail) {
   const hero = canvas.closest('.river-hero');
@@ -7,7 +7,7 @@ async function startLiveScene(canvas, poolDetail) {
   let engine;
   let gl;
   try {
-    engine = await import('./river-scene.js?v=6');
+    engine = await import('./river-scene.js?v=7');
     gl = engine.openSceneContext(canvas);
   } catch {
     // The film also covers module loading failures and blocked GPU contexts.
@@ -24,6 +24,9 @@ async function startLiveScene(canvas, poolDetail) {
   let nextFrame = 0;
   let onScreen = true;
   let retired = false;
+  let parked = false;
+  let waterOnly = matchMedia('(pointer: coarse)').matches && !film.error && !film.hasAttribute('data-needs-renderer');
+  let presentation = '';
   let quality = 1;
   let sampleStart = 0;
   let samples = 0;
@@ -31,14 +34,20 @@ async function startLiveScene(canvas, poolDetail) {
   let needsResize = true;
   let previousDraw = null;
   let sceneTime = sceneStartTime;
+  // Start each visit in a different stretch of river. This clock advances only
+  // on presented frames and never seeks with a 48-second lap of the weather.
+  let waterTime = sceneStartTime + Math.random() * 720;
   canvas.riverSceneTime = () => sceneTime;
 
   function showSurface(ready) {
-    if (canvas.hasAttribute('data-ready') === ready) return;
-    if (!ready && film && Number.isFinite(film.duration) && film.duration > 0) {
+    const next = ready ? (waterOnly ? 'layer' : 'scene') : '';
+    if (presentation === next) return;
+    if (presentation === 'scene' && Number.isFinite(film.duration) && film.duration > 0) {
       film.currentTime = (sceneTime - sceneStartTime) % film.duration;
     }
-    canvas.toggleAttribute('data-ready', ready);
+    presentation = next;
+    canvas.toggleAttribute('data-ready', next === 'scene');
+    canvas.toggleAttribute('data-water-layer', next === 'layer');
     canvas.dispatchEvent(new Event('water-renderer-change'));
   }
 
@@ -51,7 +60,7 @@ async function startLiveScene(canvas, poolDetail) {
     if (width < 1 || height < 1) return;
     needsResize = false;
 
-    const pixelBudget = portrait.matches ? 480000 : 980000;
+    const pixelBudget = waterOnly ? 275000 : portrait.matches ? 480000 : 980000;
     const density = Math.min(window.devicePixelRatio || 1, 1.6, Math.sqrt(pixelBudget / (width * height)));
     const w = Math.max(1, Math.round(width * density * quality));
     const h = Math.max(1, Math.round(height * density * quality));
@@ -93,27 +102,29 @@ async function startLiveScene(canvas, poolDetail) {
       contextLost();
       return;
     }
-    if (!canvas.hasAttribute('data-ready')) {
+    const step = previousDraw === null ? 0 : Math.min(now - previousDraw, 2 * frameInterval) / 1000;
+    waterTime += step;
+    if (waterOnly || !presentation) {
       // Start at the frame the visitor can see, even after a slow startup.
       if (film.readyState >= 2 && !film.seeking) sceneTime = sceneStartTime + film.currentTime;
-    } else if (previousDraw !== null) {
+    } else {
       // A stalled browser should resume the wind without skipping through it.
-      sceneTime += Math.min(now - previousDraw, 2 * frameInterval) / 1000;
+      sceneTime += step;
     }
     previousDraw = now;
     try {
-      // Resizing clears the drawing buffer. Change it only inside a draw and
-      // submit the entire opaque landscape before returning to the compositor.
+      // Resizing clears the drawing buffer. Register and redraw the whole
+      // layer before the compositor can present a partially resized view.
       if (needsResize) resize();
       if (needsResize) return;
-      scene.render(sceneTime, crop, true, poolDetail());
+      scene.render(sceneTime, crop, true, poolDetail(), waterTime, waterOnly);
     } catch {
       // A GPU reset can invalidate the framebuffer before the loss event is
       // delivered. Let the event handlers rebuild it when the context returns.
       if (!gl.isContextLost()) useFilm();
       return;
     }
-    if (!canvas.hasAttribute('data-ready')) {
+    if (!presentation || (presentation === 'layer' && !waterOnly)) {
       const error = gl.getError();
       if (gl.isContextLost() || error === gl.CONTEXT_LOST_WEBGL) return;
       if (error !== gl.NO_ERROR) { useFilm(); return; }
@@ -124,18 +135,22 @@ async function startLiveScene(canvas, poolDetail) {
     if (!sampleStart) sampleStart = now;
     samples++;
     const elapsed = now - sampleStart;
-    if (elapsed < 2400) return;
+    if (elapsed < (waterOnly ? 1200 : 2400)) return;
     const fps = samples * 1000 / elapsed;
     samples = 0;
     sampleStart = now;
-    slowWindows = fps < 21 ? slowWindows + 1 : 0;
+    // With a running native decoder beneath the water, favor fluid gestures
+    // and give its compositor the GPU back sooner on a slow phone.
+    slowWindows = fps < (waterOnly ? 25 : 21) ? slowWindows + 1 : 0;
     if (slowWindows < 2) return;
     slowWindows = 0;
     if (quality > 0.56) {
       quality = Math.max(0.55, quality * 0.74);
       requestResize();
-    } else {
-      useFilm();
+    } else if (film.readyState >= 2 && !film.error && !film.hasAttribute('data-needs-renderer')) {
+      parked = true;
+      showSurface(false);
+      syncFrames();
     }
   }
 
@@ -147,7 +162,7 @@ async function startLiveScene(canvas, poolDetail) {
     sampleStart = 0;
     samples = 0;
     slowWindows = 0;
-    if (!retired && scene && onScreen && !document.hidden && !hero.hasAttribute('data-suspended')) {
+    if (!retired && !parked && scene && onScreen && !document.hidden && !hero.hasAttribute('data-suspended')) {
       frame = requestAnimationFrame(draw);
     }
   }
@@ -175,8 +190,17 @@ async function startLiveScene(canvas, poolDetail) {
     syncFrames();
   });
   visibilityObserver.observe(hero);
+  film.addEventListener('river-video-unavailable', () => {
+    if (retired || (!parked && !waterOnly)) return;
+    // Reuse the same GPU context to draw the complete landscape if the
+    // decoder fails, even after a slow device elected native playback.
+    parked = false;
+    waterOnly = false;
+    requestResize();
+    syncFrames();
+  });
   function syncViewport() {
-    if (retired) return;
+    if (retired || parked) return;
     if (!hero.hasAttribute('data-suspended')) {
       // Intersection and queued animation callbacks can both be stale on return.
       const bounds = hero.getBoundingClientRect();
@@ -214,11 +238,5 @@ if (canvas) {
   const hero = canvas.closest('.river-hero');
   const film = hero.querySelector('[data-river-water]');
   const poolDetail = setupPoolDetail(hero, film, canvas);
-  // On a touch-first screen the decoder presents the authored scene on its own
-  // clock throughout a gesture, including while a finger is held on the glass.
-  if (matchMedia('(pointer: coarse)').matches && !film.error && !film.hasAttribute('data-needs-renderer')) {
-    film.addEventListener('river-video-unavailable', () => startLiveScene(canvas, poolDetail), { once: true });
-  } else {
-    startLiveScene(canvas, poolDetail);
-  }
+  startLiveScene(canvas, poolDetail);
 }

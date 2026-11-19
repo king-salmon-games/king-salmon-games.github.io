@@ -50,7 +50,7 @@ async function textureImage(file, packed = false) {
 function loadAssets() {
   assetPromise ??= Promise.all([
     fetchAsset('weather.frag?v=2').then(r => r.text()),
-    fetchAsset('water.frag?v=6').then(r => r.text()),
+    fetchAsset('water.frag?v=7').then(r => r.text()),
     fetchAsset('wind.glsl?v=1').then(r => r.text()),
     fetchAsset('measured-pool.glsl?v=1').then(r => r.text()),
     fetchAsset('measured-falls.glsl?v=1').then(r => r.text()),
@@ -128,6 +128,7 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
       program, crop: gl.getUniformLocation(program, 'uCrop'),
       size: gl.getUniformLocation(program, 'uResolution'),
       time: gl.getUniformLocation(program, 'uTime'), image: gl.getUniformLocation(program, 'uImage'),
+      windTime: gl.getUniformLocation(program, 'uWindTime'),
       detail: gl.getUniformLocation(program, 'uPoolDetail')
     };
   });
@@ -158,25 +159,29 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
   let envHeight = 0;
   let weatherTime;
 
-  function drawPass(pass, time, crop, width, height, imageUnit = 0, poolDetail = 0) {
+  function drawPass(pass, time, crop, width, height, imageUnit = 0, poolDetail = 0, windTime = time) {
     gl.useProgram(pass.program);
     gl.uniform4fv(pass.crop, crop);
     gl.uniform2f(pass.size, width, height);
     gl.uniform1f(pass.time, time);
+    if (pass.windTime) gl.uniform1f(pass.windTime, windTime % 48);
     gl.uniform1f(pass.detail, poolDetail);
     gl.uniform1i(pass.image, imageUnit);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 
-  function render(time, crop = fullLandscape, backdrop = false, poolDetail = 0) {
+  function render(time, crop = fullLandscape, backdrop = false, poolDetail = 0, waterTime = time, waterOnly = false) {
     const width = gl.drawingBufferWidth;
     const height = gl.drawingBufferHeight;
     // The sky/forest map also supplies incident light to the river. Keep the
     // entire landscape in this map, including sky outside the phone's crop.
-    const targetWidth = Math.max(1, Math.min(landscape.width, Math.round(width / crop[2])));
+    const targetWidth = Math.max(1, Math.min(waterOnly ? 384 : landscape.width, Math.round(width / crop[2])));
+    // The touch film supplies the visible clouds. Only their reflected color is
+    // needed here, so a small light probe can run at four samples per second.
+    const probeTime = waterOnly ? Math.floor(time * 4) / 4 : time;
     gl.activeTexture(gl.TEXTURE7);
     // Both pool detail levels of a film frame see exactly the same weather.
-    if (targetWidth !== envWidth || weatherTime !== time) {
+    if (targetWidth !== envWidth || weatherTime !== probeTime) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, environmentTarget);
       if (targetWidth !== envWidth) {
         envWidth = targetWidth;
@@ -192,8 +197,8 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
       gl.bindTexture(gl.TEXTURE_2D, null);
       gl.viewport(0, 0, envWidth, envHeight);
       gl.disable(gl.BLEND);
-      drawPass(weather, time, fullLandscape, envWidth, envHeight);
-      weatherTime = time;
+      drawPass(weather, probeTime, fullLandscape, envWidth, envHeight);
+      weatherTime = probeTime;
     }
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -202,18 +207,26 @@ export async function createRiverScene(gl, isCurrent = () => !gl.isContextLost()
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.disable(gl.BLEND);
-    if (backdrop) drawPass(copy, time, crop, width, height, 0);
+    if (backdrop && !waterOnly) drawPass(copy, time, crop, width, height, 0);
     // Shader outputs are straight RGBA. Store a correctly premultiplied
     // composition for the browser or draw on the opaque plate when encoding.
     gl.enable(gl.BLEND);
     gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    drawPass(copy, time, crop, width, height, 7);
-    drawPass(water, time, crop, width, height, 0, poolDetail);
+    if (!waterOnly) drawPass(copy, time, crop, width, height, 7);
+    // There is no water above plate row 290. On phones skip those fragments
+    // entirely and let the native film own the sky and forest during swipes.
+    if (waterOnly) {
+      gl.enable(gl.SCISSOR_TEST);
+      const wetHeight = Math.ceil(height * ((1 - 290 / landscape.height) - crop[1]) / crop[3]);
+      gl.scissor(0, 0, width, Math.max(0, Math.min(height, wetHeight)));
+    }
+    drawPass(water, waterTime, crop, width, height, 0, poolDetail, time);
     // Weather and water are finished using the environment. Reuse its sampler
     // for the projected light so the scene fits WebGL 1's eight texture units.
     gl.bindTexture(gl.TEXTURE_2D, cloudShadow);
     gl.blendFuncSeparate(gl.ZERO, gl.SRC_COLOR, gl.ZERO, gl.ONE);
     drawPass(shadows, time, crop, width, height);
+    if (waterOnly) gl.disable(gl.SCISSOR_TEST);
   }
   return { render };
 }

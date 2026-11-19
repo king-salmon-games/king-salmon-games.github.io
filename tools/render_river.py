@@ -23,7 +23,7 @@ from threading import Thread
 
 ROOT = Path(__file__).resolve().parents[1]
 FPS = 30
-SECONDS = 48  # One whole cloud cycle and three cycles of the plunge pool.
+SECONDS = 96  # Two atmospheric laps, each with a different stretch of water.
 OVERLAP = 1.25
 PLATE_SIZE = (1717, 916)
 # Keep a filtering margin above the first displayed detail row in both crops.
@@ -161,8 +161,8 @@ def encode(page, ffmpeg, destination):
         with subprocess.Popen(command, stdin=subprocess.PIPE) as encoder:
             for i in range(FPS * SECONDS):
                 t = i / FPS
-                # Weather and pool dynamics are already in phase at both ends:
-                # this blend closes only the non-periodic whitewater and spray.
+                # The atmosphere is already in phase. Close the native movie's
+                # open-ended water motion smoothly over the final seconds.
                 x = max(0.0, (t - (SECONDS - OVERLAP)) / OVERLAP)
                 blend = x * x * (3.0 - 2.0 * x)
                 frame = page.evaluate("args => renderFrame(args)", {"time": t, "duration": SECONDS, "blend": blend})

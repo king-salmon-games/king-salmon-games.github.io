@@ -28,7 +28,7 @@ export function setupPoolDetail(hero, film, surface) {
     // WebKit can expose a scaled decoded frame. Check its aspect ratio and
     // use normalized source rows so both the native and scaled raster align.
     return detail > 0 && visible && !document.hidden && !hero.hasAttribute('data-suspended') &&
-      !surface.hasAttribute('data-ready') &&
+      !surface.hasAttribute('data-ready') && !surface.hasAttribute('data-water-layer') &&
       !film.seeking && film.readyState >= 2 && film.videoWidth > 0 &&
       Math.abs(film.videoHeight - film.videoWidth * packedHeight / filmWidth) <= 2;
   }

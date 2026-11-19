@@ -48,7 +48,7 @@
   "films": {
     "files": ["river-pool-desktop.mp4", "river-pool-mobile.mp4", "river-start-desktop.webp", "river-start-mobile.webp", "pool-detail-desktop.png", "pool-detail-mobile.png"],
     "source": "tools/render_river.py renders the landscape and the detailed pool at the same timestamp, packs both into one video frame per crop, extracts its opening still, and derives the registered pool mask from water-mask.png.",
-    "delivery": "48-second silent H.264 loops at 30 fps. The desktop frame contains a 1600 × 854 landscape with a 1600 × 240 detail strip. The portrait frame contains a 720 × 900 landscape with a 720 × 256 detail strip."
+    "delivery": "96-second silent H.264 loops at 30 fps, with two passes of the weather over continuously changing water. The desktop frame contains a 1600 × 854 landscape with a 1600 × 240 detail strip. The portrait frame contains a 720 × 900 landscape with a 720 × 256 detail strip."
   },
   "share_preview": {
     "file": "studio-preview.jpg",

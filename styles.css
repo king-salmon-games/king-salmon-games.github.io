@@ -78,8 +78,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 [data-river-water] { position: absolute; top: 0; left: 0; display: block; width: 100%; height: auto; }
 .film-pool { position: absolute; bottom: 0; left: 0; width: 100%; height: calc(100% * var(--strip-height) / var(--film-height)); opacity: 0; visibility: hidden; -webkit-mask: url("assets/river-scene/pool-detail-desktop.png") center / 100% 100% no-repeat; mask: url("assets/river-scene/pool-detail-desktop.png") center / 100% 100% no-repeat; }
 .film-pool[data-frame] { visibility: visible; }
-[data-water-surface] { z-index: -2; opacity: 0; pointer-events: none; }
+[data-water-surface] { z-index: -2; opacity: 0; pointer-events: none; transition: opacity .25s linear; }
 [data-water-surface][data-ready] { opacity: 1; transition: opacity .16s linear; }
+[data-water-surface][data-water-layer] { opacity: 1; transition: opacity .4s linear; }
 .hero-overlay { position: relative; height: 100%; background: linear-gradient(90deg, rgba(6,13,15,.68),rgba(6,13,15,.47) 25%,rgba(6,13,15,.05) 58%,transparent 76%), linear-gradient(0deg,rgba(7,13,16,.8),transparent 23%,transparent 88%,rgba(7,13,16,.12)); }
 .hero-inner { height: 100%; display: flex; align-items: center; }
 .hero-copy { position: relative; padding-bottom: 24px; }

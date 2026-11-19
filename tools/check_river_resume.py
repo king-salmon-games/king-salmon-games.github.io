@@ -38,7 +38,7 @@ PROBE = """(() => {
   const clocks = new WeakSet();
   gl.getUniformLocation = function(program, name) {
     const location = locate.call(this, program, name);
-    if (location && name === 'uTime') clocks.add(location);
+    if (location && name === 'uTime' && locate.call(this, program, 'uWindTime')) clocks.add(location);
     return location;
   };
   gl.uniform1f = function(location, value) {
@@ -54,20 +54,38 @@ PROBE = """(() => {
 })();"""
 
 
-def check(browser, url, mobile):
+def check(browser, url, mode):
+    mobile = mode != "desktop"
     context = browser.new_context(
         viewport={"width": 390 if mobile else 1024, "height": 800},
         is_mobile=mobile, has_touch=mobile,
     )
-    clock = "riverProbe.poolTime" if mobile else "riverProbe.gpuTime"
+    clock = "riverProbe.poolTime" if mode == "native" else "riverProbe.gpuTime"
     page = context.new_page()
     try:
         page.add_init_script(PROBE)
+        if mode == "native":
+            page.add_init_script("""const get = HTMLCanvasElement.prototype.getContext;
+                HTMLCanvasElement.prototype.getContext = function(type, ...options) {
+                  if (type === 'webgl' && this.hasAttribute('data-water-surface')) return null;
+                  return get.call(this, type, ...options);
+                };""")
         page.goto(url)
         page.evaluate("scrollTo({top: 112, behavior: 'instant'})")
         page.wait_for_function(f"{clock} > 0", timeout=30_000)
         identity = page.evaluate("[performance.timeOrigin, scrollY]")
         assert identity[1] == 112
+        if mode == "touch":
+            page.wait_for_selector("[data-water-layer]")
+            water_before_seek = page.evaluate(clock)
+            page.evaluate("""async () => {
+              const film = document.querySelector('video');
+              const seek = new Promise(resolve => film.addEventListener('seeked', resolve, {once: true}));
+              film.currentTime = 46;
+              await seek;
+            }""")
+            water_elapsed = page.evaluate(clock) - water_before_seek
+            assert 0 <= water_elapsed < 10, "The live water jumped with the atmospheric film."
 
         # Run the fault after pageshow to cover callbacks discarded late in a restore.
         page.evaluate("""async () => {
@@ -87,12 +105,12 @@ def check(browser, url, mobile):
             }""")
             paused_at = page.evaluate("document.querySelector('video').currentTime")
             page.wait_for_function("time => !document.querySelector('video').paused && "
-                                   "riverProbe.poolTime > time + 0.15",
+                                   "document.querySelector('video').currentTime > time + 0.15",
                                    arg=paused_at, polling=100, timeout=6_000)
 
         assert page.evaluate("[performance.timeOrigin, scrollY]") == identity
         assert page.evaluate("document.querySelector('video').muted")
-        print(f"{'Touch film' if mobile else 'Desktop GPU'} resumed at the original scroll position.")
+        print(f"{mode} water resumed at the original scroll position.")
     finally:
         context.close()
 
@@ -105,8 +123,8 @@ def main():
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(channel=args.browser_channel, args=["--enable-unsafe-swiftshader"])
         try:
-            for mobile in (False, True):
-                check(browser, args.url, mobile)
+            for mode in ("desktop", "touch", "native"):
+                check(browser, args.url, mode)
         finally:
             browser.close()
 
