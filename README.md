@@ -129,7 +129,9 @@ The game imagery reuses artwork and development captures from the studio's sourc
 | `nemus-app-icon.jpg` | New dark forest icon, created with built-in image generation; prompt and provenance in `assets/icon-provenance.json` |
 | `kakatta-app-icon.jpg` | `kakatta`: `game/Assets/ExternalForge/Branding/KakattaAppIcon.png`; approved source hash in `art/app-icon-provenance.json` |
 
-Existing Wumbos artwork and the crowned-salmon branding are retained. Nemus uses only its forest icon and spoiler-light copy reflecting platforming that develops into simulation and strategy. Earlier Nemus screenshots remain in the repository but are not linked from the site. No new gameplay footage is published. The site identifies app icons and promotional artwork as such.
+The Cream Cheese × Phone page features the 60-second solo and multiplayer trailer from the `creamcheese` project's `artifacts/trailers/overtone-ascent-multiplayer-60s-20261119/` directory.
+
+Existing Wumbos artwork and the crowned-salmon branding are retained. Nemus uses only its forest icon and spoiler-light copy reflecting platforming that develops into simulation and strategy. Earlier Nemus screenshots remain in the repository but are not linked from the site. The site identifies app icons and promotional artwork as such.
 
 ## Publishing
 
