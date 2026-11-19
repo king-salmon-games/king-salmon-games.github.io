@@ -56,7 +56,8 @@ async function startLiveScene(canvas, poolDetail) {
   }
 
   function resize() {
-    const { width, height } = hero.getBoundingClientRect();
+    const bounds = hero.getBoundingClientRect();
+    const { width, height } = bounds;
     if (width < 1 || height < 1) return;
     needsResize = false;
 
@@ -70,16 +71,15 @@ async function startLiveScene(canvas, poolDetail) {
       gl.viewport(0, 0, w, h);
     }
 
-    // Match the CSS picture's centered object-fit: cover, including its mobile crop.
+    // The visible film frame is also the camera for the GPU and moon.
+    // Convert its CSS bounds into the shader's bottom-origin plate coordinates.
+    const frame = film.parentElement.getBoundingClientRect();
     const sourceWidth = portrait.matches ? landscape.portraitWidth : landscape.width;
     const sourceLeft = portrait.matches ? landscape.portraitLeft : 0;
-    const scale = Math.max(width / sourceWidth, height / landscape.height);
-    const visibleWidth = width / scale;
-    const visibleHeight = height / scale;
-    crop[0] = (sourceLeft + (sourceWidth - visibleWidth) / 2) / landscape.width;
-    crop[1] = (1 - visibleHeight / landscape.height) * (portrait.matches ? 0.5 : 0.68);
-    crop[2] = visibleWidth / landscape.width;
-    crop[3] = visibleHeight / landscape.height;
+    crop[0] = (sourceLeft + (bounds.left - frame.left) * sourceWidth / frame.width) / landscape.width;
+    crop[1] = (frame.bottom - bounds.bottom) / frame.height;
+    crop[2] = (width / frame.width) * (sourceWidth / landscape.width);
+    crop[3] = height / frame.height;
   }
 
   function useFilm() {

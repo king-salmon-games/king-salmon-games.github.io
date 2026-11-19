@@ -118,16 +118,18 @@ export async function mountMoon(hero) {
   }
 
   function register() {
-    const w = hero.clientWidth, h = hero.clientHeight;
+    const bounds = hero.getBoundingClientRect();
+    const frame = film.parentElement.getBoundingClientRect();
+    const w = bounds.width, h = bounds.height;
     const sourceWidth = portrait.matches ? 733 : 1717;
-    const scale = Math.max(w / sourceWidth, h / 916);
+    const scale = frame.width / sourceWidth;
     const size = patch * scale;
-    const left = (w - sourceWidth * scale) / 2 - (portrait.matches ? 820 * scale : 0);
-    const top = (h - 916 * scale) * (portrait.matches ? .5 : .32);
+    const left = frame.left - bounds.left - (portrait.matches ? 820 * scale : 0);
+    const top = frame.top - bounds.top;
     inFrame = false;
     if (position) {
       const x = left + position.u * 1717 * scale - size / 2;
-      const y = top + position.v * 916 * scale - size / 2;
+      const y = top + position.v * frame.height - size / 2;
       inFrame = x < w && x + size > 0 && y < h && y + size > 0;
       if (inFrame) {
         canvas.style.transform = 'translate(' + x + 'px,' + y + 'px)';

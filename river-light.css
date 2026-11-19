@@ -6,13 +6,10 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 32%;
+  object-position: 50% var(--scene-top, var(--scene-anchor));
   background: var(--river-ambient, #808080);
   mix-blend-mode: hard-light;
   pointer-events: none;
-}
-@media (max-width: 680px) {
-  .river-light { object-position: center; }
 }
 .river-moon {
   position: absolute;

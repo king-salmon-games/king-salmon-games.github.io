@@ -130,7 +130,7 @@
       moonView.update(sun.altitude, moon);
     } else if (surface && moon?.altitude > 0 && !loadingMoon) {
       loadingMoon = true;
-      import('./moon-disc.js?v=1').then(async ({ mountMoon }) => {
+      import('./moon-disc.js?v=2').then(async ({ mountMoon }) => {
         moonView = await mountMoon(surface.parentElement);
         if (moonView) refresh();
       }).catch(() => {}).finally(() => { loadingMoon = false; });

@@ -66,15 +66,24 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .menu-toggle .icon-close, .menu-toggle[aria-expanded="true"] .icon-menu { display: none; }
 .menu-toggle[aria-expanded="true"] .icon-close { display: block; }
 
-.river-hero { --fade-distance: 260px; position: relative; isolation: isolate; overflow: hidden; background: #152026; height: clamp(500px, 68svh, 820px); }
+.river-hero {
+  --fade-distance: 260px;
+  --film-width: 1600;
+  --film-height: 854;
+  --strip-height: 240;
+  --scene-anchor: 32%;
+  container-type: size;
+  position: relative; isolation: isolate; overflow: hidden; background: #152026;
+  height: clamp(500px, 68svh, 820px);
+}
 .scene-poster, .scene-poster img, .river-film, [data-water-surface] { position: absolute; inset: 0; width: 100%; height: 100%; }
-.scene-poster img { object-fit: cover; object-position: 50% 32%; }
+.scene-poster img { object-fit: cover; object-position: 50% var(--scene-top, var(--scene-anchor)); }
 .scene-poster { z-index: -5; }
 .js-home .scene-poster:not(.film-ready) { z-index: -3; pointer-events: none; }
-.river-film { --film-width: 1600; --film-height: 854; --strip-height: 240; --film-anchor: 32%; z-index: -4; pointer-events: none; container-type: size; overflow: hidden; }
+.river-film { z-index: -4; pointer-events: none; container-type: size; overflow: hidden; }
 /* Fit the visible composition to the hero. The same video frame carries the
    more detailed pool below that composition, outside this clipped box. */
-.film-frame { position: absolute; left: 50%; top: var(--film-anchor); transform: translate(-50%, calc(-1 * var(--film-anchor))); width: var(--film-cover-width,100%); width: max(100%, calc(100cqh * var(--film-width) / var(--film-height))); aspect-ratio: var(--film-width) / var(--film-height); overflow: hidden; }
+.film-frame { position: absolute; left: 50%; top: var(--scene-anchor); transform: translate(-50%, calc(-1 * var(--scene-anchor))); width: var(--film-cover-width,100%); width: max(100%, calc(100cqh * var(--film-width) / var(--film-height))); aspect-ratio: var(--film-width) / var(--film-height); overflow: hidden; }
 [data-river-water] { position: absolute; top: 0; left: 0; display: block; width: 100%; height: auto; }
 .film-pool { position: absolute; bottom: 0; left: 0; width: 100%; height: calc(100% * var(--strip-height) / var(--film-height)); opacity: 0; visibility: hidden; -webkit-mask: url("assets/river-scene/pool-detail-desktop.png") center / 100% 100% no-repeat; mask: url("assets/river-scene/pool-detail-desktop.png") center / 100% 100% no-repeat; }
 .film-pool[data-frame] { visibility: visible; }
@@ -168,6 +177,28 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .hero-copy h1 { font-size: clamp(75px,10.2vw,104px); }
   .game-track { --game-gap: 16px; }
 }
+@media (min-width: 681px) {
+  .river-hero {
+    --available-height: max(300px, calc(100svh - 78px));
+    min-height: min(42vw, 78svh, 820px, var(--available-height));
+    max-height: var(--available-height);
+  }
+  @supports (width: 1cqh) {
+    .river-hero {
+      /* The falls meet the pool 77% down the plate. Keep at least 18% of
+         the hero below that line whenever the cover crop permits it. */
+      --plate-height: max(100cqh, calc(100cqw * var(--film-height) / var(--film-width)));
+      --crop-room: calc(100cqh - var(--plate-height));
+      --scene-top: clamp(var(--crop-room), min(calc(.32 * var(--crop-room)), calc(82cqh - .77 * var(--plate-height))), 0px);
+    }
+    .film-frame { top: var(--scene-top); transform: translateX(-50%); }
+  }
+}
+/* Leave room for the games heading below the river on a short laptop screen. */
+@media (min-width: 1001px) and (min-aspect-ratio: 19/10) {
+  .river-hero { --available-height: max(300px, calc(100svh - 158px)); }
+  .collection { padding-top: clamp(16px, 2.4svh, 28px); }
+}
 @media (max-width: 750px) {
   :is(.js-home .collection, .collection.is-scrollable) .game-track { grid-auto-columns: calc((100% - 16px) / 2); }
   .game-track { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -179,11 +210,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .primary-nav { gap: 21px; }
 }
 @media (max-width: 680px) {
-  .scene-poster img { object-position: center; }
-  .river-film { --film-width: 720; --film-height: 900; --strip-height: 256; --film-anchor: 50%; }
   .film-pool { -webkit-mask-image: url("assets/river-scene/pool-detail-mobile.png"); mask-image: url("assets/river-scene/pool-detail-mobile.png"); }
   :root { --gutter: clamp(18px,5vw,32px); }
-  .river-hero { --fade-distance: 216px; height: clamp(500px,calc(73svh - 36px),699px); }
+  .river-hero { --fade-distance: 216px; --scene-anchor: 50%; --film-width: 720; --film-height: 900; --strip-height: 256; height: clamp(500px,calc(73svh - 36px),699px); }
   .hero-overlay { background: linear-gradient(0deg,#081012ed 0%,#081012b8 24%,#08101255 43%,transparent 62%),linear-gradient(90deg,#07101440,transparent 75%); }
   .hero-inner { align-items: flex-end; }
   .hero-copy { padding-bottom: 47px; }
