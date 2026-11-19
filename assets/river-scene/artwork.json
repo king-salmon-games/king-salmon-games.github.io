@@ -13,6 +13,11 @@
     "source": "tools/build_water_mask.py maps the ledges, pool and spray in river-desktop.webp. tools/bake_water_dynamics.py uses the pool mask as the bank boundary for a depth-averaged shallow-water simulation with waterfall inflow and transported foam.",
     "delivery": "Lossless 1536 × 768 WebP atlas holding 64 frames of water height, two surface slopes and foam over eight seconds. water.frag traces the falling sheets and pool surface, adds capillary ripples and spray, and samples the moving environment for reflections."
   },
+  "pool_impacts": {
+    "files": ["impact-response.webp", "impact-response.glsl"],
+    "source": "tools/bake_pool_response.py drives three waterfall landing zones with finite pressure pulses on the river's wet-cell grid. It measures signed elevation and slope as the waves cross the variable-depth basin, reflect from solid shores and leave the open boundaries.",
+    "delivery": "A 1024 × 1600 lossless atlas holds 64 samples per landing zone and the registered bed depth, shore distance and inward normal. Both the live renderer and films combine the active responses on the water clock."
+  },
   "measured_pool": {
     "files": ["measured-pool.glsl", "measured-pool.webp"],
     "dataset": "A Data Set of Sea Surface Stereo Images to Resolve Space-Time Wave Fields (2019)",

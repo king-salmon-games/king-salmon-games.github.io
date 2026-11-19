@@ -66,6 +66,35 @@ float ledge(float x, float tier) {
            + 3.9*sin((x-1060.0)*.023);
 }
 
+// Onsets are defined at the plunge pool, on the water's clock in model seconds.
+// Two intervals span at least (2 - .36) * 5.13 > 8.4 s, so the last two
+// arrivals include every still-active 8 s response at each landing zone.
+vec2 impactEvent(float source, float modelTime, float previous) {
+    float spacing = 5.13 + .37*source;
+    float laneTime = modelTime/spacing + .319 + .37*source;
+    float slot = floor(laneTime);
+    float offset = .19 + .36*hash(vec2(source+28.1,slot));
+    slot -= (1.-step(offset,fract(laneTime))) + previous;
+    float onset = slot + .19 + .36*hash(vec2(source+28.1,slot));
+    float age = (laneTime-onset)*spacing;
+    float strength = .68 + .78*hash(vec2(slot+.73,source+12.4));
+    return vec2(age,strength);
+}
+
+// Sample the load of the nearest of the three pressure patches baked in
+// tools/bake_pool_response.py. A falling parcel queries its arrival time;
+// the spray queries its launch time. Both use the same pulse as the pool.
+float impactLoad(float landingX, float modelTime) {
+    float source = step(1022.5,landingX) + step(1245.,landingX);
+    float center = source < .5 ? 900. : (source < 1.5 ? 1145. : 1345.);
+    vec2 event = impactEvent(source,modelTime,0.);
+    if (event.x < 0. || event.x >= .60) return 0.;
+    float pulse = sin(3.14159265*event.x/.60);
+    // At this waterline the solver's .54 m cross-stream radius is 35 pixels.
+    float reach = (landingX-center)/35.;
+    return event.y*pulse*pulse*exp(-.5*reach*reach);
+}
+
 // Uneven notches along the lip gather the upstream flow. A pulse can divide
 // around a notch into two neighboring ropes, then rejoin the continuous sheet.
 // Evaluate discharge at release time so the split travels down with the water.
@@ -120,6 +149,15 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
     float lane = rootX*metresPerPixel;
     float clock = flowTime();
     float launch = clock-flight;
+    float surge = 0.;
+    if (tier < .5 || tier > 2.5) {
+        // Follow a parcel to the waterline before sampling its discharge.
+        // The shorter ledges above the steps have their own ongoing flow.
+        float toeHeight = max(0.,704. - ledge(rootX,tier))*metresPerPixel;
+        float toeFlight = (sqrt(entry*entry + 2.*gravity*toeHeight)-entry)/gravity;
+        float landingX = rootX + lateral*toeFlight/metresPerPixel;
+        surge = impactLoad(landingX,launch+toeFlight);
+    }
     vec2 parcel = vec2(lane, -launch);
     float streams = feederStreams(lane,launch,flight,tier);
     float feed = noise(vec2(lane*.56+.12*launch,launch*.31+6.4*tier));
@@ -153,7 +191,7 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
     float relief = observed.r*mix(.034,.020,ledgeJet)*(1.0-.23*breakup);
     float lean = observed.b*mix(.38,.28,ledgeJet);
     // q=v*h conserves the flux of a ribbon as gravity thins it.
-    float flux = .035+.026*feed+.081*streams;
+    float flux = .035+.026*feed+.081*streams+.062*surge;
     float halfThickness = .5*flux/speed*(1.0-.26*ledgeJet)
         * (1.0+.29*observed.r+.13*observed.g);
     vec2 sheet = vec2(parcel.x, parcel.y*1.6);
@@ -201,7 +239,7 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
         + .22*wetSample(uv,offset-axis*16.5-across*5.4,vec2(1,0),base);
     float ln = dot(local,luminance);
     float light = dot(N,normalize(vec3(.68,-.28,.70)));
-    float bubbles = clamp(.10+.25*aeration+.31*streams+.23*(folds-.5)+.64*ribbons
+    float bubbles = clamp(.10+.25*aeration+.31*streams+.23*(folds-.5)+.64*ribbons+.15*aeration*surge
                           +(.085+.075*ledgeJet)*observed.g,0.0,1.0);
     // Beer-Lambert extinction in a bubble-laden sheet. Dense breaking ribbons
     // scatter the sky; thinner filaments transmit the shadow of the basalt.
@@ -211,7 +249,7 @@ vec3 fallingWater(vec2 px, vec2 uv, vec3 base, float gust) {
     vec3 clouded = vec3(.66,.81,.91)*(.44+.69*ln+.14*chop);
     diffuse = mix(diffuse,clouded,scatter*(.24+.22*aeration));
     float contrast = .87*ribbons+.061*(folds-.50)+.033*(braid-.5)
-                   + (.056+.095*aeration)*(streams-.21);
+                   + (.056+.095*aeration)*(streams-.21) + .075*surge*(.45+.55*aeration);
     diffuse += vec3(.84,.93,1.0)*contrast*(.46+.52*ln);
     float fresnel = .0204+.9796*pow(1.0-max(0.0,dot(N,-ray)),5.0);
     vec3 sky = environment(vec2(uv.x+N.x*.095,.85+N.y*.095));
@@ -230,13 +268,59 @@ vec2 poolToPixel(vec2 world) {
 }
 
 #include "measured-pool.glsl"
+#include "impact-response.glsl"
 
-vec4 poolState(vec2 world, float frame, vec2 drift, float recordedTime) {
+// Responses are signed. Crossing crests can reinforce one another, and an
+// incoming crest can cancel a reflected trough before either affects light.
+vec3 impactWaves(vec2 world, float t) {
+    vec3 wave = vec3(0.);
+    for (int i=0; i<3; ++i) {
+        float source = float(i);
+        for (int j=0; j<2; ++j) {
+            vec2 emission = impactEvent(source,t,float(j));
+            wave += emission.y * impactResponse(world,source,emission.x);
+        }
+    }
+    return wave;
+}
+
+vec3 nearBankRipple(vec3 wave, vec3 fade) {
+    // Product rule for the damped height: its normal still describes its
+    // actual surface where the small wave dies away against the bank.
+    return vec3(fade.x*wave.x, fade.x*wave.yz + wave.x*fade.yz);
+}
+
+vec3 shoreFade(vec4 bed, vec2 displacement) {
+    float s=clamp((bed.y+dot(bed.zw,displacement))/.65,0.,1.);
+    return vec3(s*s*(3.-2.*s),bed.zw*(6.*s*(1.-s)/.65));
+}
+
+// Keep the total free surface above the bed in an exceptionally deep trough.
+// Above the last quarter of the still-water column the response is linear.
+vec3 wetColumnSurface(vec3 surface, vec2 point, vec2 target, float referenceDepth,
+                      vec2 referenceSlope, out float depth) {
+    vec2 displacement=point-target;
+    depth=referenceDepth+dot(referenceSlope,displacement);
+    if (surface.x >= -.75*impactMinDepth) return surface;
+    // Only a deep trough needs additional bathymetry reads along the ray.
+    vec2 bedSlope=referenceSlope;
+    if (any(notEqual(point,target))) depth=impactBoundary(point,bedSlope).x;
+    float q=surface.x/depth;
+    if (q >= -.75) return surface;
+    // F(q) and F'(q) join the unmodified surface continuously at q=-.75.
+    // The remaining column tends to 2% of the local resting depth.
+    float factor=1./(1.-(q+.75)/.23);
+    float limited=-.98+.23*factor;
+    float derivative=factor*factor;
+    return vec3(depth*limited,derivative*surface.yz+(limited-q*derivative)*bedSlope);
+}
+
+vec4 poolState(vec2 world, float frame, vec2 drift, float recordedTime, vec3 fade) {
     vec2 local = clamp((poolToPixel(world)-vec2(480.0,672.0))/vec2(1237.0,244.0),0.0,1.0);
     float a = floor(frame);
     vec4 state = mix(dynamicsTile(local,a),dynamicsTile(local,mod(a+1.0,64.0)),fract(frame));
     vec3 surface = (state.rgb-.5) * vec3(.5,1.2,1.2);
-    vec3 measured = measuredPoolWave(world + drift, recordedTime);
+    vec3 measured = nearBankRipple(measuredPoolWave(world + drift, recordedTime),fade);
     return vec4(.58 * surface + .69 * measured, clamp((state.a-.5)*2.0,0.0,1.0));
 }
 
@@ -262,12 +346,14 @@ vec3 capillary(vec2 p, float gust) {
     vec3 omega=sqrt(gravity*k+.000073*k*k*k);
     vec2 current=vec2(.21,.49);
     float t = flowTime();
-    float run = sin(p.x*.83+p.y*.95-t*.88);
+    float carrier = p.x*.83+p.y*.95-t*.88;
+    vec3 bend = vec3(1.6,-1.13,1.22);
     vec3 phase=kx*(p.x-current.x*t)+ky*(p.y-current.y*t)-omega*t
-              +vec3(1.6,-1.13,1.22)*run;
+              +bend*sin(carrier);
     vec3 a = vec3(.0021,.0010,.0006)*(.74+.53*gust);
     vec3 ca = a*cos(phase);
-    return vec3(dot(a,sin(phase)),dot(ca,kx),dot(ca,ky));
+    vec3 turn = bend*cos(carrier);
+    return vec3(dot(a,sin(phase)),dot(ca,kx+.83*turn),dot(ca,ky+.95*turn));
 }
 
 // Three directional packets resolve successively shorter surface waves
@@ -281,44 +367,9 @@ struct PoolPacket {
     vec3 harmonic;
 };
 
-// A finite wave train passes a point once. Back-project its group velocity
-// to its emission time at the inflow; successive pulses can change length,
-// direction, and energy without a discontinuity as a train dies out.
 vec3 trainHash(vec3 n) {
     vec3 h = fract(n * vec3(.1031,.0973,.1099));
     return fract(h*(h+33.33)*(h+19.19));
-}
-
-PoolPacket gravityTrains(vec2 p, vec3 current) {
-    float t = flowTime();
-    vec3 duration = vec3(4.71,3.37,2.29);
-    vec3 reach = vec3(.23*p.x+p.y, -.54*p.x+.90*p.y, .62*p.x+.83*p.y);
-    vec3 travel = reach / vec3(.96,.82,.73);
-    vec3 cycle = (t-travel)/duration + vec3(8.13,19.52,31.86);
-    vec3 id = floor(cycle);
-    vec3 age = fract(cycle);
-    vec3 tube = age*(1.-age);
-    vec3 envelope = 16.*tube*tube;
-    vec3 seed = trainHash(id);
-    vec3 angle = vec3(.19,-.71,.87) + .65*(seed-.5) + .60*current.x;
-    vec3 k = vec3(4.7,7.8,12.8) * (.72 + .66*trainHash(id+8.37));
-    PoolPacket packet;
-    packet.kx = k*sin(angle);
-    packet.ky = k*cos(angle);
-    vec3 along = packet.kx*p.x + packet.ky*p.y;
-    vec3 crossStream = p.x*cos(angle) - p.y*sin(angle);
-    vec3 bend = crossStream*vec3(.71,1.02,1.21) + tau*seed;
-    vec3 speed = sqrt(gravity*k) + packet.kx*current.x + packet.ky*current.y;
-    packet.phase = along - speed*(age*duration+travel) + .83*sin(bend) + tau*seed;
-    // Treat a train as a locally tangent wave patch for the short camera ray.
-    vec3 steering = .83*vec3(.71,1.02,1.21)*cos(bend);
-    packet.kx += steering*cos(angle);
-    packet.ky -= steering*sin(angle);
-    vec3 width = .38+.62*smoothstep(vec3(-.82),vec3(.79),cos(.68*bend+2.4*seed));
-    packet.amplitude = vec3(.089,.049,.023)*envelope*width
-                     * (.72+.58*trainHash(id+27.19))*(.81+.35*current.z);
-    packet.harmonic = vec3(.17,.15,.12);
-    return packet;
 }
 
 PoolPacket poolPacket(vec2 p, float s, float gust, float detail) {
@@ -415,50 +466,80 @@ vec2 carriedFoam(vec2 p, float s, vec2 current, float variation) {
 }
 
 vec3 poolParcelColor(vec2 uv, vec2 offset, vec3 fallback) {
-    vec2 src=uv+uvOffset(offset);
+    vec2 path=uvOffset(offset);
+    vec2 src=uv+path;
     vec2 edge=min(src,1.-src)*plateSize;
     float inside=smoothstep(0.,4.,min(edge.x,edge.y));
-    return mix(fallback,wetSample(uv,offset,vec2(0,1),fallback),inside);
+    // A long trace can have water at both ends and a rock in between.
+    float through=min(texture2D(uMask,uv+path*.33).g,texture2D(uMask,uv+path*.67).g);
+    through=min(through,texture2D(uMask,src).g);
+    return mix(fallback,texture2D(uScene,src).rgb,inside*smoothstep(.12,.58,through));
 }
 
 vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     float s=clamp((px.y-672.0)/244.0,0.0,1.0);
     vec2 target=vec2((px.x-1100.0)/(58.0+50.0*s),7.2*s/(.55+.45*s));
     float t=flowTime();
+    vec2 bedSlope;
+    vec4 bed=impactBoundary(target,bedSlope);
+    vec3 fade=shoreFade(bed,vec2(0.));
     vec3 current=poolCurrent(target);
+    // The solver reflects waves normally at solid banks. Bubbles and the
+    // background current slide along those same banks without crossing them.
+    current.xy -= (1.-fade.x)*dot(current.xy,bed.zw)*bed.zw;
     // The baked inflow remains attached to its riverbanks. The measured
     // small waves ride through it on an independent playhead and current.
     vec2 eddy = vec2(noise(target*.29+vec2(-.081*t,9.1)),
                      noise(target.yx*.38+vec2(13.7,-.093*t)))-.5;
-    float frame=mod(t*7.63+5.6*eddy.x+.66*target.x,64.0);
-    float recordedTime=1.91*t+.43*target.y-.21*target.x+1.53*eddy.y;
-    vec2 drift=-vec2(.073,.19)*t + vec2(.3*target.y,.13*target.x)+.81*eddy;
-    PoolPacket gravityWaves = gravityTrains(target,current);
+    // Each solved state has one time throughout the connected basin. A
+    // spatially varying playhead would displace a front from its reflection.
+    float frame=mod(t*8.,64.);
+    float recordedTime=1.91*t;
+    vec2 drift=-vec2(.073,.19)*t;
+    vec3 impact=impactWaves(target,t);
     // Trace the upper face of the simulated water column. Its signed vertical
     // residual divided by the slope norm is the local tangent distance. The
     // directional derivative intersects the grazing ray with that tangent.
     vec3 ray=normalize(vec3(.035,-.79,-mix(.43,.70,s)));
     vec3 point=vec3(target,0.0);
+    bool metBank=false;
     float detail = clamp(uPoolDetail,0.0,1.0);
     PoolPacket packet;
     if (detail > 0.0) packet = poolPacket(target,s,gust,detail);
     for (int i=0;i<5;++i) {
         if (i>=3 && detail==0.0) break;
-        vec4 sim=poolState(point.xy,frame,drift,recordedTime);
-        vec3 ripple=capillary(point.xy,gust)+packetSurface(gravityWaves,point.xy-target);
+        fade=shoreFade(bed,point.xy-target);
+        vec4 sim=poolState(point.xy,frame,drift,recordedTime,fade);
+        vec3 ripple=capillary(point.xy,gust);
         if (detail > 0.0) ripple += packetSurface(packet,point.xy-target);
-        vec3 n=normalize(vec3(-sim.gb-ripple.yz,1.0));
-        float distanceToSurface=(point.z-sim.r-ripple.x)*n.z;
+        ripple=nearBankRipple(ripple,fade)+impact;
+        ripple.x+=dot(impact.yz,point.xy-target);
+        float rayDepth;
+        vec3 surface=wetColumnSurface(sim.rgb+ripple,point.xy,target,bed.x,bedSlope,rayDepth);
+        vec3 n=normalize(vec3(-surface.yz,1.0));
+        float distanceToSurface=(point.z-surface.x)*n.z;
         float correction=clamp(distanceToSurface/max(.21,-dot(n,ray)),-.13,.13);
-        point+=ray*(i<3 ? correction : detail*correction);
+        vec3 stepAlong=ray*(i<3 ? correction : detail*correction);
+        float bankStep=dot(stepAlong.xy,bed.zw);
+        float clearance=max(0.,bed.y+dot(point.xy-target,bed.zw));
+        if (bankStep < -clearance) {
+            stepAlong*=clearance/(-bankStep);
+            metBank=true;
+        }
+        point+=stepAlong;
     }
-    vec4 sim=poolState(point.xy,frame,drift,recordedTime);
-    vec3 gravitySurface=packetSurface(gravityWaves,point.xy-target);
-    vec3 ripple=capillary(point.xy,gust)+gravitySurface;
+    fade=shoreFade(bed,point.xy-target);
+    vec4 sim=poolState(point.xy,frame,drift,recordedTime,fade);
+    // The march uses a local tangent. Evaluate the actual intersected wave
+    // again for the visible normal, including curved and reflected fronts.
+    impact=impactWaves(point.xy,t);
+    vec3 ripple=capillary(point.xy,gust);
     vec3 fine=vec3(0.0);
     if (detail > 0.0) fine=packetSurface(packet,point.xy-target);
-    ripple+=fine;
-    vec2 gradient=sim.gb+ripple.yz;
+    ripple=nearBankRipple(ripple+fine,fade)+impact;
+    float localDepth;
+    vec3 surface=wetColumnSurface(sim.rgb+ripple,point.xy,target,bed.x,bedSlope,localDepth);
+    vec2 gradient=surface.yz;
     vec3 N=normalize(vec3(-gradient,1.0));
     vec3 view=-ray;
     vec3 reflected=reflect(ray,N);
@@ -467,12 +548,17 @@ vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     // optically active surface layer bounds displacement on the scene plate.
     // Foam scatters near the surface. Applying the full clear-water optical
     // path to a breaking crest makes its bright edges fracture into a grid.
-    float breaks = smoothstep(.19,.52,3.5*gravitySurface.x-.76*gravitySurface.z);
+    vec3 longSurface=sim.rgb+impact;
+    float head=min(longSurface.x,surface.x)/max(.12,localDepth);
+    float steep=min(length(longSurface.yz),length(gradient));
+    // Fresh foam needs an elevated, steep or depth-limited crest. Adding
+    // signed displacements before this test keeps cancelling waves smooth.
+    float breaks=smoothstep(.025,.17,head)*max(smoothstep(.27,.49,steep),smoothstep(.32,.46,head));
     float air = clamp(.52*breaks+.68*smoothstep(.13,.52,sim.a),0.0,1.0);
-    vec3 opticalNormal=normalize(vec3(-sim.gb-ripple.yz*(.84-.20*air),1.0));
+    vec3 opticalNormal=normalize(vec3(-gradient*(.96-.24*air),1.0));
     vec3 transmitted=refract(ray,opticalNormal,1.0/1.333);
     vec3 flatT=refract(ray,vec3(0,0,1),1.0/1.333);
-    float depth=(.18+.11*s)*(1.0-.68*air);
+    float depth=min((.18+.11*s)*(1.0-.68*air),max(0.,localDepth+surface.x));
     vec2 bent=(transmitted.xy/max(.30,-transmitted.z)-flatT.xy/-flatT.z)*depth;
     // Transport the photograph's foam with the current. Two staggered
     // backtraces hand off only at zero weight, so a parcel can travel tens
@@ -516,7 +602,7 @@ vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     // Short breaking crests produce fresh foam. The remaining, longer-lived
     // filaments travel downstream through water already aerated by the falls.
     float crest=smoothstep(.12,.69,84.0*fine.x-dot(fine.yz,vec2(.71,.34)));
-    float whitecap=crest*smoothstep(.08,.42,sim.a);
+    float whitecap=crest*breaks;
     // Only a steep, elevated wave face overturns. Its bright lip exists
     // during that crest's passage and the residual bubbles travel downstream.
     foam += (1.-foam)*breaks*(.10+.19*current.z+.19*carried.x);
@@ -524,6 +610,16 @@ vec3 riverPool(vec2 px, vec2 uv, vec3 base, float gust) {
     foam += (1.0-foam) * ((.29+.13*detail)*carried.y*bubbles + .19*detail*whitecap);
     vec3 froth=mix(vec3(.55,.67,.72),vec3(.80,.85,.86),.36+.43*carried.x+.12*carried.y);
     water=mix(water,froth,.56*foam);
+    // At an exposed wall a very deep trough can be hidden behind the bank.
+    // A reflected crest with a valid wet intersection remains fully visible.
+    if (metBank) {
+        float clearance=max(0.,bed.y+dot(point.xy-target,bed.zw));
+        float residual=(point.z-surface.x)*N.z;
+        float towardWall=-dot(ray.xy,bed.zw)*residual/max(.21,-dot(N,ray));
+        float blocked=smoothstep(.002,.02,towardWall-clearance);
+        vec2 bankUv=uv+uvOffset(poolToPixel(point.xy)-px);
+        water=mix(water,texture2D(uScene,bankUv).rgb,blocked);
+    }
     return water;
 }
 
@@ -573,7 +669,8 @@ vec3 spray(vec2 px, vec2 uv, vec3 underlying, float gust) {
     vec3 scattered=environment(vec2(uv.x,.86));
     vec3 mistLight=mix(vec3(.74,.84,.91),scattered,.18);
     float droplets=flyingDrops(px,gust);
-    float opacity=.04+.18*density+.08*droplets;
+    float surge = impactLoad(px.x,flowTime()-age);
+    float opacity=.04+.18*density+.08*droplets+.095*surge*(.45+.55*density);
     return mix(underlying,mistLight,opacity)+droplets*vec3(.27,.33,.37);
 }
 

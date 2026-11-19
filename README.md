@@ -37,7 +37,9 @@ The website ships plain HTML, CSS, JavaScript, and local assets. Ordinary editin
 
 ## Waterfall
 
-Different notches in the ledge feed the falls at different rates. Each surge splits into strands that carry bright streaks downhill and accelerate toward the pool. A signed distance field describes the folded sheets so the shader can trace their surfaces and calculate how they transmit and scatter light. In the pool, finite groups of waves steepen over the submerged bars, shed foam and die away. The surface current carries that foam downstream while smaller ripples pass through it.
+Different notches in the ledge feed the falls at different rates. Each surge splits into strands that carry bright streaks downhill and accelerate toward the pool. A signed distance field describes the folded sheets so the shader can trace their surfaces and calculate how they transmit and scatter light. The strongest surges strike three landing zones in the pool. The falling sheet, spray and outgoing wave share the impact time, with the travel time from the lip calculated under gravity.
+
+The pool uses a depth-averaged wave model on its own shoreline and submerged bars. An offline solver records how a short pressure pulse at each landing zone travels, bends over shallower water, reflects from the banks and exits downstream. The live shader adds the signed heights and slopes of all arriving pulses before calculating reflections, refraction or breaking foam. Crests reinforce and troughs can cancel them. Where a trough approaches the bed, its depth and normal adjust together to preserve a thin water layer. Fine ripples fade near the banks, while foam travels with the current. [Shallow-water equations](https://www.clawpack.org/riemann_book/html/Shallow_water.html)
 
 The bright ribbons on the waterfall come from a separate neural field trained on 192 high-speed camera frames of water falling over a three-metre weir. The training targets are signed distances in the camera image to the edges of the bright water, together with local brightness. The distance fit had a root mean square error of 0.88 pixels on 24 withheld frames in the 160 × 112 crop. The footage supplies the optical pattern. The three-dimensional sheet geometry and its thickness are modeled. A broad ribbon pattern follows the main drop, and the short ledges use narrower, more aerated streams. [Experimental data](https://doi.org/10.5281/zenodo.3686591)
 
@@ -45,7 +47,7 @@ As the hero title and button fade, the foreground pool resolves three shorter ba
 
 The pool also uses surface motion learned from a stereo recording of the Black Sea. The dataset supplies grids of water heights reconstructed from two camera views. We took 240 frames at 15 Hz over a 1.55 m square, held out every eighth frame, and trained a neural signed distance field near the air–water interface. It learns from points above, below, and on the measured surface. On the held-out frames the fitted surface had a height RMSE of 2.83 cm, compared with 7.23 cm for the training-set mean water level. This measures interpolation within the recording. The riverbanks, current and foam come from the site's river simulation. [Data and credits](https://kingsalmongames.com/support.html#river-credits)
 
-The network estimates the height and vertical normal component at each horizontal position and time. Multiplying the vertical residual by that component approximates signed distance close to the surface. The shader samples the baked zero crossing and its slopes. The underlying four-metre tile contains 16 seconds of measured motion. Each part of the current samples a different point in that recording, while the larger waves and foam evolve on an independent clock that starts at a different point each visit.
+The network estimates the height and vertical normal component at each horizontal position and time. Multiplying the vertical residual by that component approximates signed distance close to the surface. The shader advects the measured four-metre tile and samples its zero crossing and slopes. Connected parts of the basin advance together on a water clock that starts at a different point each visit.
 
 The sky shader traces sunlight through a high veil and a deeper bank of clouds. On the distant slopes, a separate volume moves pockets of vapor across the mountains and above the falls. A traveling gust bends the fir crowns, followed by smaller branch movements as the trees settle. The renderer projects a softened shadow from the cloud density onto the canopy, rock and water.
 
@@ -63,6 +65,7 @@ The original landscape is `assets/river-scene/river-desktop.webp` (1717 × 916).
 | --- | --- | --- |
 | Water boundaries | `python tools/build_water_mask.py`, then rebake the pool | NumPy, OpenCV |
 | Pool dynamics and foam | `python tools/bake_water_dynamics.py` | NumPy, Numba, Pillow |
+| Impact waves after changing the shoreline, depth or landing zones | `python tools/bake_pool_response.py`, then `python tools/check_pool_response.py` | NumPy, Numba, Pillow |
 | Sky boundary, canopy, valley clouds, or cloud shadows | `python tools/build_weather.py`, then `python tools/build_solar_zones.py` | NumPy, Pillow |
 | Lunar cloud cover after changing the sky or wind | `python tools/bake_moon_clouds.py --browser-channel chrome` | Python Playwright and Pillow, Chrome with WebGL |
 | Water boundaries used for sunlight and reflections | `python tools/build_solar_zones.py` after changing the water mask | Pillow |
