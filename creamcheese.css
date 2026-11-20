@@ -3,15 +3,10 @@
 .creamcheese-page .cover-grid { grid-template-columns: minmax(0,1.15fr) minmax(0,.85fr); gap: clamp(32px,6vw,96px); margin-top: 12px; }
 .creamcheese-page .cover-copy h1 { font-size: clamp(4rem,7.4vw,7.5rem); }
 .creamcheese-page .inner-label, .creamcheese-page .project-specs { font-size: .875rem; letter-spacing: .045em; }
-.creamcheese-page .project-summary { max-width: 34ch; }
 .cream-trailer { width: min(100%,360px); min-width: 0; justify-self: center; }
-.trailer-heading { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; }
+.trailer-heading { margin-bottom: 12px; }
 .trailer-heading h2 { font: 600 1rem/1.4 var(--font); }
-.trailer-heading > span { color: var(--inner-muted); font: .8125rem/1.4 var(--font-mono); }
 .cream-trailer video { display: block; width: 100%; height: auto; aspect-ratio: 9/16; object-fit: contain; background: #061b20; border: 1px solid var(--inner-rule); border-radius: 4px; }
-.trailer-description { margin-top: 8px; color: var(--inner-muted); }
-.trailer-description summary { width: fit-content; min-height: 44px; padding-block: 11px; color: var(--inner-text); font-size: .875rem; cursor: pointer; }
-.trailer-description p { font-size: 1rem; line-height: 1.65; margin-top: 12px !important; }
 .creamcheese-page .project-aside { border-top: 0; }
 .creamcheese-page .project-aside { padding-block: clamp(36px,4.5vw,64px); }
 .cream-more { align-items: center; }
@@ -25,7 +20,7 @@
   .creamcheese-page .project-cover > .inner-shell { padding-block: 12px 36px; }
   .creamcheese-page .cover-grid { gap: 0; margin-top: 12px; }
   .creamcheese-page .cover-copy h1 { font-size: clamp(3.25rem,12vw,5.75rem); }
-  .cream-trailer { order: -1; align-self: center; margin-bottom: 24px !important; }
+  .cream-trailer { order: -1; align-self: center; }
   .creamcheese-page .project-specs { margin-block: 1.2rem 1.5rem !important; }
   .cream-more > .inner-action { justify-self: start; }
 }
